@@ -3,12 +3,15 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useSite } from '@/context/SiteContext';
+import { hasPermission } from '@/lib/permissions';
 import LoginPage from '@/components/auth/LoginPage';
 import SiteSelection from '@/components/auth/SiteSelection';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import InventoryTable from '@/components/inventory/InventoryTable';
 import ActivityLogs from '@/components/inventory/ActivityLogs';
 import DepartmentManagement from '@/components/settings/DepartmentManagement';
+import UserManagement from '@/components/users/UserManagement';
+import ForcePasswordChange from '@/components/auth/ForcePasswordChange';
 
 export default function Home() {
   const { user, loading: authLoading } = useAuth();
@@ -21,6 +24,7 @@ export default function Home() {
 
   const handleSectionChange = (section) => {
     if (section === 'addDevice') {
+      if (!hasPermission(user, 'canAdd')) return; // guard
       setSelectedDevice(null);
       setIsFormOpen(true);
       setActiveSection('inventory');
@@ -39,6 +43,10 @@ export default function Home() {
 
   if (!user) {
     return <LoginPage />;
+  }
+
+  if (user.forcePasswordChange) {
+    return <ForcePasswordChange />;
   }
 
   if (!currentSite) {
@@ -64,7 +72,13 @@ export default function Home() {
         ) : activeSection === 'logs' ? (
           <ActivityLogs />
         ) : activeSection === 'departments' ? (
-          <DepartmentManagement />
+          hasPermission(user, 'canManageDepartments') ? (
+            <DepartmentManagement />
+          ) : <AccessDenied />
+        ) : activeSection === 'users' ? (
+          user?.isAdmin ? (
+            <UserManagement />
+          ) : <AccessDenied />
         ) : (
           <div className="flex flex-col items-center justify-center p-20 text-slate-400">
              <h1 className="text-2xl font-bold">Coming Soon</h1>
@@ -82,4 +96,16 @@ export default function Home() {
   );
 }
 
-
+function AccessDenied() {
+  return (
+    <div className="flex flex-col items-center justify-center p-20 text-slate-400">
+      <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center mb-4">
+        <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-red-400">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+        </svg>
+      </div>
+      <h1 className="text-xl font-bold text-slate-600">Access Denied</h1>
+      <p className="text-sm mt-1">You don't have permission to view this section.</p>
+    </div>
+  );
+}

@@ -5,8 +5,12 @@ import { AuthProvider } from "@/context/AuthContext";
 import { SiteProvider } from "@/context/SiteContext";
 
 export const metadata = {
-  title: "IT Management Interface",
+  title: "Hiru TV Inventory System",
   description: "Professional IT Inventory Management System",
+  icons: {
+    icon: '/logo.jpg',
+    apple: '/logo.jpg',
+  }
 };
 
 export default function RootLayout({ children }) {

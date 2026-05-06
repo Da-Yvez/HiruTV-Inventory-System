@@ -5,6 +5,7 @@ import { db } from '@/lib/firebase';
 import { collection, onSnapshot, query, orderBy, doc, updateDoc, serverTimestamp, deleteDoc, setDoc } from 'firebase/firestore';
 import { useSite } from '@/context/SiteContext';
 import { useAuth } from '@/context/AuthContext';
+import { hasPermission } from '@/lib/permissions';
 import { 
     Search, 
     Filter, 
@@ -198,6 +199,10 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
         return matchesSearch && matchesDept;
     });
 
+    const canAdd = hasPermission(user, 'canAdd', currentSite);
+    const canEdit = hasPermission(user, 'canEdit', currentSite);
+    const canDelete = hasPermission(user, 'canDelete', currentSite);
+
     if (loading) {
         return (
             <div className="flex flex-col items-center justify-center p-32 text-slate-400">
@@ -294,13 +299,15 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
                 </div>
                 
                 <div className="flex items-center gap-4">
-                    <button 
-                        onClick={() => { setSelectedDevice(null); setIsViewMode(false); setIsFormOpen(true); }}
-                        className="flex items-center gap-3 px-8 py-4 bg-[#003135] text-white rounded-[24px] font-black tracking-wide hover:bg-[#004145] transition-all shadow-xl shadow-[#003135]/20 hover:scale-[1.02] active:scale-[0.98]"
-                    >
-                        <Plus size={22} strokeWidth={3} />
-                        ADD DEVICE
-                    </button>
+                    {canAdd && (
+                        <button 
+                            onClick={() => { setSelectedDevice(null); setIsViewMode(false); setIsFormOpen(true); }}
+                            className="flex items-center gap-3 px-8 py-4 bg-[#003135] text-white rounded-[24px] font-black tracking-wide hover:bg-[#004145] transition-all shadow-xl shadow-[#003135]/20 hover:scale-[1.02] active:scale-[0.98]"
+                        >
+                            <Plus size={22} strokeWidth={3} />
+                            ADD DEVICE
+                        </button>
+                    )}
                     <button 
                         onClick={handleExport}
                         className="flex items-center justify-center w-[60px] h-[60px] bg-emerald-50 text-emerald-600 rounded-[24px] hover:bg-emerald-600 hover:text-white transition-all border border-emerald-100"
@@ -431,18 +438,22 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
                                                 >
                                                     <Eye size={16} />
                                                 </button>
-                                                <button 
-                                                    onClick={() => handleEdit(device)}
-                                                    className="p-2.5 text-[#003135] bg-slate-50 hover:bg-[#003135] hover:text-white rounded-xl transition-all border border-slate-100" title="Edit Device"
-                                                >
-                                                    <Edit size={16} />
-                                                </button>
-                                                <button 
-                                                    onClick={() => handleDelete(device)}
-                                                    className="p-2.5 text-rose-600 bg-slate-50 hover:bg-rose-600 hover:text-white rounded-xl transition-all border border-slate-100" title="Delete Device"
-                                                >
-                                                    <Trash2 size={16} />
-                                                </button>
+                                                {canEdit && (
+                                                    <button 
+                                                        onClick={() => handleEdit(device)}
+                                                        className="p-2.5 text-[#003135] bg-slate-50 hover:bg-[#003135] hover:text-white rounded-xl transition-all border border-slate-100" title="Edit Device"
+                                                    >
+                                                        <Edit size={16} />
+                                                    </button>
+                                                )}
+                                                {canDelete && (
+                                                    <button 
+                                                        onClick={() => handleDelete(device)}
+                                                        className="p-2.5 text-rose-600 bg-slate-50 hover:bg-rose-600 hover:text-white rounded-xl transition-all border border-slate-100" title="Delete Device"
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                )}
                                             </div>
                                         </td>
 

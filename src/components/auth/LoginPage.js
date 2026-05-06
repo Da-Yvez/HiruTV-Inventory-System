@@ -188,7 +188,7 @@ const LoginPage = () => {
         initial={{ opacity: 0, y: 32, scale: 0.96 }}
         animate={{ opacity: 1, y: 0,  scale: 1 }}
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-        className="relative z-10 w-full max-w-md mx-4"
+        className="relative z-10 w-full max-w-lg mx-4"
       >
         {/* Glow ring */}
         <div className="absolute -inset-px rounded-3xl bg-gradient-to-br from-orange-500/60 via-amber-400/30 to-red-600/40 blur-sm" />
@@ -290,9 +290,14 @@ const LoginPage = () => {
           </form>
 
           {/* ── Footer ── */}
-          <p className="mt-8 text-center text-xs text-white/25">
-            Hiru TV IT Department
-          </p>
+          <div className="mt-8 text-center space-y-1">
+            <p className="text-[10px] text-white/20 font-bold uppercase tracking-widest">
+              Hiru TV IT Department
+            </p>
+            <p className="text-[10px] text-white/10 font-bold uppercase tracking-widest">
+              Powered by <a href="https://yvexa.dev" target="_blank" rel="noopener noreferrer" className="hover:text-orange-500/50 transition-colors">YVEXA</a>
+            </p>
+          </div>
         </div>
       </motion.div>
     </div>
