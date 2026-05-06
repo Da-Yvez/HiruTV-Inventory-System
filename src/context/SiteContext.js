@@ -1,8 +1,9 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { db } from '@/lib/firebase';
-import { doc, onSnapshot, setDoc, getDoc, updateDoc } from 'firebase/firestore';
+import { db, auth } from '@/lib/firebase';
+import { doc, onSnapshot, setDoc, updateDoc } from 'firebase/firestore';
+import { onAuthStateChanged } from 'firebase/auth';
 
 const SiteContext = createContext({});
 
@@ -39,29 +40,45 @@ export const SiteProvider = ({ children }) => {
 
     useEffect(() => {
         const savedSiteId = localStorage.getItem('selectedSite');
-        if (savedSiteId && siteConfig[savedSiteId]) {
-            // Setup real-time listener for the selected site
-            const unsubscribe = onSnapshot(doc(db, 'sites', savedSiteId), async (snapshot) => {
-                if (snapshot.exists()) {
-                    setCurrentSite({ ...siteConfig[savedSiteId], ...snapshot.data() });
+        
+        // Use auth state listener to ensure we don't call Firestore before login
+        const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+            if (user && savedSiteId && siteConfig[savedSiteId]) {
+                const unsubscribeSite = onSnapshot(doc(db, 'sites', savedSiteId), async (snapshot) => {
+                    if (snapshot.exists()) {
+                        setCurrentSite({ ...siteConfig[savedSiteId], ...snapshot.data() });
+                        setLoading(false);
+                    } else {
+                        // Seed if missing
+                        const initialData = siteConfig[savedSiteId];
+                        try {
+                            await setDoc(doc(db, 'sites', savedSiteId), {
+                                fullName: initialData.fullName,
+                                departments: initialData.departments,
+                                technicians: initialData.technicians,
+                                networkDiagram: initialData.networkDiagram
+                            });
+                        } catch (e) {
+                            console.error("Error seeding site:", e);
+                        }
+                        setCurrentSite(initialData);
+                        setLoading(false);
+                    }
+                }, (error) => {
+                    console.error("Site listener error:", error);
+                    // If permissions fail, we still want to stop loading
                     setLoading(false);
-                } else {
-                    // Seed if missing
-                    const initialData = siteConfig[savedSiteId];
-                    await setDoc(doc(db, 'sites', savedSiteId), {
-                        fullName: initialData.fullName,
-                        departments: initialData.departments,
-                        technicians: initialData.technicians,
-                        networkDiagram: initialData.networkDiagram
-                    });
-                    setCurrentSite(initialData);
-                    setLoading(false);
-                }
-            });
-            return () => unsubscribe();
-        } else {
-            setLoading(false);
-        }
+                });
+
+                return () => unsubscribeSite();
+            } else {
+                // If no user or no site, just stop loading
+                if (!user) setCurrentSite(null);
+                setLoading(false);
+            }
+        });
+
+        return () => unsubscribeAuth();
     }, []);
 
     const selectSite = async (siteKey) => {
