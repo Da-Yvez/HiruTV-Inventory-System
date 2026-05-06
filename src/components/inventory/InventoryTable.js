@@ -194,10 +194,10 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
         return (
             <div className="flex flex-col items-center justify-center p-32 text-slate-400">
                 <div className="relative">
-                    <RefreshCcw className="animate-spin text-[#003135]/20" size={60} />
-                    <RefreshCcw className="animate-spin absolute inset-0 text-[#003135] blur-[1px]" size={60} />
+                    <RefreshCcw className="animate-spin text-orange-500/20" size={60} />
+                    <RefreshCcw className="animate-spin absolute inset-0 text-orange-500 blur-[1px]" size={60} />
                 </div>
-                <p className="font-black text-[#003135] mt-6 tracking-widest uppercase text-xs">Syncing Digital Assets</p>
+                <p className="font-black text-orange-600 mt-6 tracking-widest uppercase text-xs">Syncing Digital Assets</p>
             </div>
         );
     }

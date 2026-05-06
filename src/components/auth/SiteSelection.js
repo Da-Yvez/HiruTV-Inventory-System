@@ -5,6 +5,8 @@ import { useSite } from '@/context/SiteContext';
 import { motion } from 'framer-motion';
 import { Building2, Globe, ArrowRight } from 'lucide-react';
 
+import { GLSLHills } from '@/components/glsl-hills';
+
 const SiteSelection = () => {
     const { selectSite, siteConfig } = useSite();
 
@@ -13,60 +15,86 @@ const SiteSelection = () => {
         show: {
             opacity: 1,
             transition: {
-                staggerChildren: 0.2
+                staggerChildren: 0.15
             }
         }
     };
 
     const item = {
-        hidden: { opacity: 0, y: 20 },
-        show: { opacity: 1, y: 0 }
+        hidden: { opacity: 0, y: 30, scale: 0.95 },
+        show: { 
+            opacity: 1, 
+            y: 0, 
+            scale: 1,
+            transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] }
+        }
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#003135] to-[#00474A] p-6">
-            <div className="w-full max-w-4xl">
+        <div className="relative min-h-screen w-full overflow-hidden bg-black flex items-center justify-center p-6">
+            {/* ── Animated Hills Background ── */}
+            <div className="absolute inset-0 z-0">
+                <GLSLHills speed={0.4} cameraZ={140} />
+            </div>
+
+            {/* ── Dark overlay for readability ── */}
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-[1px] z-1" />
+
+            <div className="relative z-10 w-full max-w-5xl">
                 <motion.div
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="text-center mb-12"
+                    className="text-center mb-16"
                 >
-                    <h1 className="text-4xl font-bold text-white mb-4">Select Workspace</h1>
-                    <p className="text-emerald-100/70 text-lg">Choose a site to manage inventory and logs</p>
+                    <h1 className="text-5xl font-black tracking-tight text-white mb-4">
+                        <span className="bg-gradient-to-r from-orange-400 via-amber-300 to-red-500 bg-clip-text text-transparent">
+                            Select Workspace
+                        </span>
+                    </h1>
+                    <p className="text-white/50 text-lg font-medium">Choose a site to manage inventory and logs</p>
                 </motion.div>
 
                 <motion.div
                     variants={container}
                     initial="hidden"
                     animate="show"
-                    className="grid grid-cols-1 md:grid-cols-2 gap-8"
+                    className="grid grid-cols-1 md:grid-cols-2 gap-10"
                 >
                     {Object.values(siteConfig).map((site) => (
                         <motion.div
                             key={site.id}
                             variants={item}
-                            whileHover={{ scale: 1.02, y: -5 }}
+                            whileHover={{ scale: 1.02, y: -8 }}
                             whileTap={{ scale: 0.98 }}
                             onClick={() => selectSite(site.id)}
-                            className="bg-white/95 backdrop-blur-sm rounded-3xl p-8 cursor-pointer shadow-xl hover:shadow-2xl transition-all group relative overflow-hidden"
+                            className="relative group cursor-pointer"
                         >
-                            <div className="absolute top-0 right-0 w-32 h-32 bg-[#00A3A8]/5 rounded-bl-full transform translate-x-10 -translate-y-10 group-hover:translate-x-5 group-hover:-translate-y-5 transition-transform" />
+                            {/* Card Glow */}
+                            <div className="absolute -inset-px rounded-[40px] bg-gradient-to-br from-orange-500/30 to-red-600/30 blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                             
-                            <div className="relative z-10">
-                                <div className="w-16 h-16 bg-[#003135]/5 rounded-2xl flex items-center justify-center mb-6 text-[#003135] group-hover:bg-[#003135] group-hover:text-white transition-colors duration-300">
-                                    {site.icon === 'Building2' ? <Building2 size={32} /> : <Globe size={32} />}
-                                </div>
+                            <div className="relative bg-black/60 backdrop-blur-2xl border border-white/10 rounded-[40px] p-10 shadow-2xl transition-all duration-300">
+                                <div className="absolute top-0 right-0 w-40 h-40 bg-orange-500/5 rounded-bl-full transform translate-x-10 -translate-y-10 group-hover:translate-x-5 group-hover:-translate-y-5 transition-transform duration-500" />
                                 
-                                <h3 className="text-3xl font-bold text-[#003135] mb-2">{site.name}</h3>
-                                <p className="text-slate-500 mb-8 h-12">{site.fullName}</p>
-                                
-                                <div className="flex items-center gap-2 text-[#00A3A8] font-bold group-hover:gap-4 transition-all">
-                                    Open Dashboard <ArrowRight size={20} />
+                                <div className="relative z-10">
+                                    <div className="w-20 h-20 bg-gradient-to-br from-orange-500 to-red-600 rounded-3xl flex items-center justify-center mb-8 text-white shadow-lg shadow-orange-500/20 transform group-hover:rotate-6 transition-transform duration-300">
+                                        {site.icon === 'Building2' ? <Building2 size={38} /> : <Globe size={38} />}
+                                    </div>
+                                    
+                                    <h3 className="text-4xl font-black text-white mb-3 group-hover:text-orange-400 transition-colors">{site.name}</h3>
+                                    <p className="text-white/40 text-lg mb-10 h-14 font-medium leading-relaxed">{site.fullName}</p>
+                                    
+                                    <div className="flex items-center gap-3 text-orange-400 font-black tracking-wider uppercase text-sm group-hover:gap-6 transition-all">
+                                        Enter Site <ArrowRight size={20} strokeWidth={3} />
+                                    </div>
                                 </div>
                             </div>
                         </motion.div>
                     ))}
                 </motion.div>
+                
+                <p className="mt-16 text-center text-white/20 text-xs font-bold tracking-widest uppercase">
+                    Hiru TV Network Management System
+                </p>
             </div>
         </div>
     );

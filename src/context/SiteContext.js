@@ -11,7 +11,7 @@ export const siteConfig = {
     wtc: {
         id: 'wtc',
         name: "WTC",
-        fullName: "Wijeya Television Corporation",
+        fullName: "World Trade Center",
         icon: "Building2",
         technicians: ["Adithya", "Minosh", "Niluksha", "Gayan"],
         departments: ["Engineering", "NEWS", "Scheduling", "MCR", "PCR 1", "PCR 2", "Marketing A/B", "Marketing C", "Research", "Political", "GFX", "Transmission", "Library", "Maintenance"],
@@ -23,7 +23,7 @@ export const siteConfig = {
     hls: {
         id: 'hls',
         name: "HLS",
-        fullName: "Hiru Live Streaming",
+        fullName: "Hiru Life Studio",
         icon: "Globe",
         technicians: ["Navendra"],
         departments: ["Programming", "Camera", "Managers", "Edit", "Graphic", "Secatry", "Dubbing", "Engineering", "IT", "HR"],

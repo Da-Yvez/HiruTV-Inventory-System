@@ -61,8 +61,8 @@ const ActivityLogs = () => {
     if (loading) {
         return (
             <div className="flex flex-col items-center justify-center p-20 text-slate-400">
-                <RefreshCcw className="animate-spin mb-4" size={32} />
-                <p className="font-medium">Loading activity logs...</p>
+                <RefreshCcw className="animate-spin mb-4 text-orange-500" size={32} />
+                <p className="font-bold text-orange-600 tracking-wide uppercase text-xs">Syncing logs...</p>
             </div>
         );
     }

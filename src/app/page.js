@@ -31,8 +31,8 @@ export default function Home() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#003135]">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white"></div>
+      <div className="min-h-screen flex items-center justify-center bg-black">
+        <div className="w-12 h-12 border-4 border-orange-500/30 border-t-orange-500 rounded-full animate-spin"></div>
       </div>
     );
   }
