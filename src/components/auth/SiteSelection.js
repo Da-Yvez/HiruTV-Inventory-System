@@ -9,7 +9,7 @@ import { Building2, Globe, ArrowRight, Lock } from 'lucide-react';
 
 import { GLSLHills } from '@/components/glsl-hills';
 
-const SiteSelection = () => {
+const SiteSelection = ({ onOpenSettings }) => {
     const { selectSite, siteConfig } = useSite();
     const { user } = useAuth();
 
@@ -112,6 +112,24 @@ const SiteSelection = () => {
                         );
                     })}
                 </motion.div>
+                
+                {user?.isAdmin && (
+                    <motion.div
+                        variants={item}
+                        initial="hidden"
+                        animate="show"
+                        className="mt-12 flex justify-center"
+                    >
+                        <button 
+                            onClick={onOpenSettings}
+                            className="flex items-center gap-3 px-10 py-5 bg-white/5 hover:bg-white/10 text-white rounded-[32px] border border-white/10 transition-all hover:scale-[1.02] active:scale-[0.98] group"
+                        >
+                            <Lock className="text-orange-400 group-hover:rotate-12 transition-transform" size={20} />
+                            <span className="font-black tracking-widest uppercase text-sm">System Settings</span>
+                            <ArrowRight size={18} className="opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+                        </button>
+                    </motion.div>
+                )}
                 
                 <div className="mt-16 text-center space-y-2">
                     <p className="text-white/20 text-xs font-bold tracking-widest uppercase">

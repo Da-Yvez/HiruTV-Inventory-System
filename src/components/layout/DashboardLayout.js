@@ -22,22 +22,24 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-const DashboardLayout = ({ children, activeSection, onSectionChange }) => {
+const DashboardLayout = ({ children, activeSection, onSectionChange, isSystemMode = false, onCloseSystemMode }) => {
     const { user, logout } = useAuth();
     const { currentSite, clearSite } = useSite();
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
     // Main nav — gated by permission
-    const mainMenuItems = [
+    const mainMenuItems = isSystemMode ? [
+        { id: 'users', label: 'User Management', icon: <Users size={20} />, show: user?.isAdmin === true },
+        // Future system features can go here
+    ].filter(item => item.show) : [
         { id: 'inventory',  label: 'Device Inventory',  icon: <LayoutDashboard size={20} />, show: hasPermission(user, 'canView') },
         { id: 'addDevice',  label: 'Add New Device',    icon: <PlusCircle size={20} />,      show: hasPermission(user, 'canAdd') },
         { id: 'logs',       label: 'Activity Logs',     icon: <History size={20} />,          show: hasPermission(user, 'canViewLogs') },
     ].filter(item => item.show);
 
     // Settings nav — gated by permission
-    const settingsMenuItems = [
+    const settingsMenuItems = isSystemMode ? [] : [
         { id: 'departments', label: 'Departments', icon: <Settings size={20} />, show: hasPermission(user, 'canManageDepartments') },
-        { id: 'users',       label: 'User Management', icon: <Users size={20} />, show: user?.isAdmin === true },
     ].filter(item => item.show);
 
     const NavItem = ({ item }) => (
@@ -94,7 +96,7 @@ const DashboardLayout = ({ children, activeSection, onSectionChange }) => {
                             animate={{ opacity: 1 }}
                             className="font-bold text-xl text-[#003135] whitespace-nowrap"
                         >
-                            {currentSite?.name} <span className="text-[#00A3A8]">IT</span>
+                            {isSystemMode ? 'System' : currentSite?.name} <span className="text-[#00A3A8]">{isSystemMode ? 'Settings' : 'IT'}</span>
                         </motion.span>
                     )}
                 </div>
@@ -111,31 +113,35 @@ const DashboardLayout = ({ children, activeSection, onSectionChange }) => {
                         </>
                     )}
 
-                    {/* Information */}
-                    <SectionLabel label="Information" />
-                    <ul className="space-y-2 px-3">
-                        <li>
-                            <a
-                                href="/downloads/advisorinstaller.exe"
-                                download
-                                className="w-full flex items-center p-3 text-[#5A6C6D] hover:bg-slate-50 hover:text-[#003135] rounded-xl transition-all"
-                            >
-                                <span className="min-w-[40px] flex justify-center"><Download size={20} /></span>
-                                {isSidebarOpen && <span className="ml-2 font-semibold">Download App</span>}
-                            </a>
-                        </li>
-                        <li>
-                            <a
-                                href={process.env.NEXT_PUBLIC_NAME_LIST_URL || "#"}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="w-full flex items-center p-3 text-[#5A6C6D] hover:bg-slate-50 hover:text-[#003135] rounded-xl transition-all"
-                            >
-                                <span className="min-w-[40px] flex justify-center"><FileSpreadsheet size={20} /></span>
-                                {isSidebarOpen && <span className="ml-2 font-semibold">Name List</span>}
-                            </a>
-                        </li>
-                    </ul>
+                    {/* Information — Only for site context */}
+                    {!isSystemMode && (
+                        <>
+                            <SectionLabel label="Information" />
+                            <ul className="space-y-2 px-3">
+                                <li>
+                                    <a
+                                        href="/downloads/advisorinstaller.exe"
+                                        download
+                                        className="w-full flex items-center p-3 text-[#5A6C6D] hover:bg-slate-50 hover:text-[#003135] rounded-xl transition-all"
+                                    >
+                                        <span className="min-w-[40px] flex justify-center"><Download size={20} /></span>
+                                        {isSidebarOpen && <span className="ml-2 font-semibold">Download App</span>}
+                                    </a>
+                                </li>
+                                <li>
+                                    <a
+                                        href={process.env.NEXT_PUBLIC_NAME_LIST_URL || "#"}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="w-full flex items-center p-3 text-[#5A6C6D] hover:bg-slate-50 hover:text-[#003135] rounded-xl transition-all"
+                                    >
+                                        <span className="min-w-[40px] flex justify-center"><FileSpreadsheet size={20} /></span>
+                                        {isSidebarOpen && <span className="ml-2 font-semibold">Name List</span>}
+                                    </a>
+                                </li>
+                            </ul>
+                        </>
+                    )}
 
                     {/* Settings — only shown if user has any settings access */}
                     {settingsMenuItems.length > 0 && (
@@ -151,11 +157,13 @@ const DashboardLayout = ({ children, activeSection, onSectionChange }) => {
                 {/* Sidebar Footer */}
                 <div className="p-3 border-t border-[#D1DDDE]">
                     <button
-                        onClick={clearSite}
+                        onClick={isSystemMode ? onCloseSystemMode : clearSite}
                         className="w-full flex items-center p-3 text-[#5A6C6D] hover:bg-slate-100 hover:text-[#003135] rounded-xl transition-all"
                     >
                         <span className="min-w-[40px] flex justify-center"><ArrowLeftRight size={20} /></span>
-                        {isSidebarOpen && <span className="ml-2 font-semibold">Switch Site</span>}
+                        {isSidebarOpen && <span className="ml-2 font-semibold">
+                            {isSystemMode ? 'Back to Sites' : 'Switch Site'}
+                        </span>}
                     </button>
                     <button
                         onClick={logout}
@@ -195,7 +203,7 @@ const DashboardLayout = ({ children, activeSection, onSectionChange }) => {
                     <div className="flex items-center gap-4">
                         <div className="text-[#5A6C6D] text-sm font-medium bg-slate-100 px-4 py-2 rounded-full flex items-center gap-2">
                             <ShieldCheck size={16} className="text-[#00A3A8]" />
-                            {currentSite?.fullName}
+                            {isSystemMode ? 'Global Administration' : currentSite?.fullName}
                         </div>
                     </div>
 

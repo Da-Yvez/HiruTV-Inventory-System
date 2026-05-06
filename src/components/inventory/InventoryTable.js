@@ -104,44 +104,63 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
     };
 
     const handleExport = () => {
-        const exportData = filteredDevices.map(device => {
-            const data = {
-                'Asset ID': device.pcNumber,
-                'Model/Type': device.pcModel,
-                'Serial Number': device.pcSerial,
-                'Department': device.department,
-                'User': device.userName || 'Unassigned',
-                'Status': device.status?.toUpperCase(),
-                'IP Addresses': device.networkInterfaces?.map(i => i.ipAddress).filter(Boolean).join(', ') || 'N/A',
-            };
+        const prepareExportData = (dataList) => {
+            return dataList.map(device => {
+                const data = {
+                    'Asset ID': device.pcNumber,
+                    'Model/Type': device.pcModel,
+                    'Serial Number': device.pcSerial,
+                    'Department': device.department,
+                    'User': device.userName || 'Unassigned',
+                    'Status': device.status?.toUpperCase(),
+                    'IP Addresses': device.networkInterfaces?.map(i => i.ipAddress).filter(Boolean).join(', ') || 'N/A',
+                };
 
-            // Default to PC if deviceType is missing (for existing assets)
-            if (!device.deviceType || device.deviceType === 'pc') {
-                data['CPU'] = device.cpu || '';
-                data['RAM'] = device.ram || '';
-                data['Storage'] = device.storage || '';
-                data['GPU'] = device.gpu || '';
-                data['Monitors'] = device.monitors?.map(m => `${m.model} (${m.serial})`).join(' | ') || '';
-                data['IO Devices'] = device.ioDevices?.map(i => `${i.name}: ${i.model}`).join(' | ') || '';
-                data['Software'] = device.softwareLicenses?.map(s => s.name).join(', ') || '';
-            } else {
-                device.customFields?.forEach(field => {
-                    if (field.label) data[field.label] = field.value;
-                });
-            }
+                if (!device.deviceType || device.deviceType === 'pc') {
+                    data['CPU'] = device.cpu || '';
+                    data['RAM'] = device.ram || '';
+                    data['Storage'] = device.storage || '';
+                    data['GPU'] = device.gpu || '';
+                    data['Monitors'] = device.monitors?.map(m => `${m.model} (${m.serial})`).join(' | ') || '';
+                    data['IO Devices'] = device.ioDevices?.map(i => `${i.name}: ${i.model}`).join(' | ') || '';
+                    data['Software'] = device.softwareLicenses?.map(s => s.name).join(', ') || '';
+                } else {
+                    device.customFields?.forEach(field => {
+                        if (field.label) data[field.label] = field.value;
+                    });
+                }
 
-            data['Notes'] = device.inventoryNotes || '';
-            data['Added By'] = device.createdBy || 'System';
-            data['Created Date'] = device.createdAt ? new Date(device.createdAt.seconds * 1000).toLocaleDateString() : 'N/A';
+                data['Notes'] = device.inventoryNotes || '';
+                data['Added By'] = device.createdBy || 'System';
+                data['Created Date'] = device.createdAt ? new Date(device.createdAt.seconds * 1000).toLocaleDateString() : 'N/A';
 
-            return data;
-        });
+                return data;
+            });
+        };
 
-        const worksheet = XLSX.utils.json_to_sheet(exportData);
         const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Inventory");
+
+        // 1. Mixed List (Current Filters)
+        const mixedData = prepareExportData(filteredDevices);
+        const mixedSheet = XLSX.utils.json_to_sheet(mixedData);
+        XLSX.utils.book_append_sheet(workbook, mixedSheet, "Mixed Inventory");
+
+        // 2. Active Assets
+        const activeDevices = filteredDevices.filter(d => d.status === 'active');
+        if (activeDevices.length > 0) {
+            const activeData = prepareExportData(activeDevices);
+            const activeSheet = XLSX.utils.json_to_sheet(activeData);
+            XLSX.utils.book_append_sheet(workbook, activeSheet, "Active Assets");
+        }
+
+        // 3. Department Stores (In-Store)
+        const storeDevices = filteredDevices.filter(d => d.status === 'in-store');
+        if (storeDevices.length > 0) {
+            const storeData = prepareExportData(storeDevices);
+            const storeSheet = XLSX.utils.json_to_sheet(storeData);
+            XLSX.utils.book_append_sheet(workbook, storeSheet, "Department Stores");
+        }
         
-        // Style adjustments (optional but nice)
         const fileName = `${currentSite.name}_Inventory_${new Date().toISOString().split('T')[0]}.xlsx`;
         XLSX.writeFile(workbook, fileName);
     };
@@ -323,8 +342,8 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
                 {[
                     { label: 'Inventory Size', value: devices.length, color: 'text-[#003135]', bg: 'bg-[#003135]/5', icon: Database },
                     { label: 'Active Assets', value: devices.filter(d => d.status === 'active').length, color: 'text-emerald-600', bg: 'bg-emerald-50', icon: Activity },
-                    { label: 'System Failures', value: devices.filter(d => d.status === 'failed').length, color: 'text-rose-600', bg: 'bg-rose-50', icon: ShieldAlert },
-                    { label: 'Retired/Replaced', value: devices.filter(d => d.status === 'replaced').length, color: 'text-amber-600', bg: 'bg-amber-50', icon: Archive },
+                    { label: 'Dept. Stores', value: devices.filter(d => d.status === 'in-store').length, color: 'text-indigo-600', bg: 'bg-indigo-50', icon: Archive },
+                    { label: 'Failed/Retired', value: devices.filter(d => ['failed', 'replaced'].includes(d.status)).length, color: 'text-rose-600', bg: 'bg-rose-50', icon: ShieldAlert },
                 ].map((stat, i) => (
                     <div key={i} className="bg-white p-8 rounded-[40px] shadow-sm border border-slate-100 flex flex-col items-center group hover:shadow-lg transition-all duration-500">
                         <div className={`w-12 h-12 ${stat.bg} rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
@@ -420,11 +439,13 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
                                              <span className={`
                                                  inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border
                                                  ${device.status === 'active' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : ''}
+                                                 ${device.status === 'in-store' ? 'bg-indigo-50 text-indigo-600 border-indigo-100' : ''}
                                                  ${device.status === 'failed' ? 'bg-rose-50 text-rose-600 border-rose-100' : ''}
                                                  ${device.status === 'replaced' ? 'bg-amber-50 text-amber-600 border-amber-100' : ''}
                                              `}>
                                                 <div className={`w-1.5 h-1.5 rounded-full ${
                                                     device.status === 'active' ? 'bg-emerald-500' : 
+                                                    device.status === 'in-store' ? 'bg-indigo-500' : 
                                                     device.status === 'failed' ? 'bg-rose-500' : 'bg-amber-500'
                                                 }`} />
                                                 {device.status}

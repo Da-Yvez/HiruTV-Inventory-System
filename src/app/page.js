@@ -17,6 +17,7 @@ export default function Home() {
   const { user, loading: authLoading } = useAuth();
   const { currentSite, loading: siteLoading } = useSite();
   const [activeSection, setActiveSection] = useState('inventory');
+  const [isSystemSettingsOpen, setIsSystemSettingsOpen] = useState(false);
   
   // Shared form state
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -31,6 +32,16 @@ export default function Home() {
     } else {
       setActiveSection(section);
     }
+  };
+
+  const handleOpenSystemSettings = () => {
+    setIsSystemSettingsOpen(true);
+    setActiveSection('users');
+  };
+
+  const handleCloseSystemSettings = () => {
+    setIsSystemSettingsOpen(false);
+    setActiveSection('inventory');
   };
 
   if (authLoading) {
@@ -49,8 +60,32 @@ export default function Home() {
     return <ForcePasswordChange />;
   }
 
+  // System Settings Mode (Global)
+  if (isSystemSettingsOpen && user?.isAdmin) {
+    return (
+      <DashboardLayout 
+        activeSection={activeSection} 
+        onSectionChange={handleSectionChange}
+        isSystemMode={true}
+        onCloseSystemMode={handleCloseSystemSettings}
+      >
+        <div className="p-8 max-w-[1600px] mx-auto">
+          <div className="mb-8">
+              <h1 className="text-3xl font-black text-[#003135] tracking-tight">System Settings</h1>
+              <p className="text-slate-500 font-medium">Manage global configuration and user permissions</p>
+          </div>
+          {activeSection === 'users' ? (
+            <UserManagement />
+          ) : (
+            <ComingSoon onBack={() => setActiveSection('users')} />
+          )}
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   if (!currentSite) {
-    return <SiteSelection />;
+    return <SiteSelection onOpenSettings={handleOpenSystemSettings} />;
   }
 
   return (
@@ -75,24 +110,26 @@ export default function Home() {
           hasPermission(user, 'canManageDepartments') ? (
             <DepartmentManagement />
           ) : <AccessDenied />
-        ) : activeSection === 'users' ? (
-          user?.isAdmin ? (
-            <UserManagement />
-          ) : <AccessDenied />
         ) : (
-          <div className="flex flex-col items-center justify-center p-20 text-slate-400">
-             <h1 className="text-2xl font-bold">Coming Soon</h1>
-             <p>This section is currently under development.</p>
-             <button 
-              onClick={() => handleSectionChange('inventory')}
-              className="mt-4 px-6 py-2 bg-[#003135] text-white rounded-xl font-bold"
-             >
-               Go back to Inventory
-             </button>
-          </div>
+          <ComingSoon onBack={() => handleSectionChange('inventory')} />
         )}
       </div>
     </DashboardLayout>
+  );
+}
+
+function ComingSoon({ onBack }) {
+  return (
+    <div className="flex flex-col items-center justify-center p-20 text-slate-400">
+       <h1 className="text-2xl font-bold">Coming Soon</h1>
+       <p>This section is currently under development.</p>
+       <button 
+        onClick={onBack}
+        className="mt-4 px-6 py-2 bg-[#003135] text-white rounded-xl font-bold"
+       >
+         Go back
+       </button>
+    </div>
   );
 }
 

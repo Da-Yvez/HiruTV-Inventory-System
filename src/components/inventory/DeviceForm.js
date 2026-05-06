@@ -232,6 +232,7 @@ const DeviceForm = ({ isOpen, onClose, onSave, initialData = null, departments =
                                     className="w-full px-5 py-3 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:outline-none focus:border-[#003135] focus:bg-white transition-all font-bold appearance-none disabled:opacity-70 disabled:cursor-not-allowed"
                                 >
                                     <option value="active" className="text-emerald-600">Active</option>
+                                    <option value="in-store" className="text-indigo-600">In-Store (Reserved)</option>
                                     <option value="failed" className="text-rose-600">Failed</option>
                                     <option value="replaced" className="text-amber-600">Replaced</option>
                                 </select>
