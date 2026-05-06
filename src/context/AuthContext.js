@@ -1,12 +1,12 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { 
-    onAuthStateChanged, 
-    signInWithEmailAndPassword, 
-    signOut, 
-    setPersistence, 
-    browserSessionPersistence 
+import {
+    onAuthStateChanged,
+    signInWithEmailAndPassword,
+    signOut,
+    setPersistence,
+    browserSessionPersistence
 } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 
@@ -17,23 +17,27 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // Set persistence to session (logout when browser is closed)
-        setPersistence(auth, browserSessionPersistence);
+        let unsubscribe;
 
-        const unsubscribe = onAuthStateChanged(auth, (user) => {
-            if (user) {
-                setUser({
-                    uid: user.uid,
-                    email: user.email,
-                    displayName: user.displayName || user.email.split('@')[0],
-                });
-            } else {
-                setUser(null);
-            }
-            setLoading(false);
+        // Set persistence to session (logout when browser is closed), then set auth listener
+        setPersistence(auth, browserSessionPersistence).then(() => {
+            unsubscribe = onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    setUser({
+                        uid: user.uid,
+                        email: user.email,
+                        displayName: user.displayName || user.email.split('@')[0],
+                    });
+                } else {
+                    setUser(null);
+                }
+                setLoading(false);
+            });
         });
 
-        return () => unsubscribe();
+        return () => {
+            if (unsubscribe) unsubscribe();
+        };
     }, []);
 
     const login = (email, password) => {

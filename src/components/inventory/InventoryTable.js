@@ -20,7 +20,8 @@ import {
     Database,
     Activity,
     ShieldAlert,
-    Archive
+    Archive,
+    AlertTriangle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { addLog } from '@/lib/utils';
@@ -36,6 +37,7 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
     const [selectedDepts, setSelectedDepts] = useState([]);
     const [isDeptFilterOpen, setIsDeptFilterOpen] = useState(false);
     const [isViewMode, setIsViewMode] = useState(false);
+    const [deviceToDelete, setDeviceToDelete] = useState(null);
 
 
     useEffect(() => {
@@ -82,15 +84,21 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
         setIsFormOpen(true);
     };
 
-    const handleDelete = async (device) => {
-        if (!window.confirm(`Are you sure you want to delete ${device.pcNumber}?`)) return;
+    const handleDelete = (device) => {
+        setDeviceToDelete(device);
+    };
 
+    const confirmDelete = async () => {
+        if (!deviceToDelete) return;
+        
         try {
-            await deleteDoc(doc(db, currentSite.firebaseCollection, device.id));
-            await addLog(currentSite, user, 'Device Deleted', `Deleted device ${device.pcNumber} (${device.pcModel})`);
+            await deleteDoc(doc(db, currentSite.firebaseCollection, deviceToDelete.id));
+            await addLog(currentSite, user, 'Device Deleted', `Deleted device ${deviceToDelete.pcNumber} (${deviceToDelete.pcModel})`);
         } catch (error) {
             console.error("Error deleting device:", error);
             alert("Failed to delete device.");
+        } finally {
+            setDeviceToDelete(null);
         }
     };
 
@@ -461,6 +469,47 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
                 departments={currentSite.departments}
                 isReadOnly={isViewMode}
             />
+
+            {/* Custom Delete Confirmation Modal */}
+            <AnimatePresence>
+                {deviceToDelete && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                        <motion.div 
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                            className="bg-white w-full max-w-md rounded-[32px] shadow-2xl p-8"
+                        >
+                            <div className="flex flex-col items-center text-center">
+                                <div className="w-16 h-16 bg-rose-50 text-rose-500 rounded-2xl flex items-center justify-center mb-6">
+                                    <AlertTriangle size={32} />
+                                </div>
+                                <h3 className="text-2xl font-black text-[#003135] mb-2">Delete Device?</h3>
+                                <p className="text-slate-500 font-medium mb-8">
+                                    Are you sure you want to permanently delete 
+                                    <span className="font-bold text-[#003135]"> {deviceToDelete.pcNumber} </span>? 
+                                    This action cannot be undone.
+                                </p>
+                                
+                                <div className="flex gap-4 w-full">
+                                    <button 
+                                        onClick={() => setDeviceToDelete(null)}
+                                        className="flex-1 py-4 bg-slate-100 hover:bg-slate-200 text-[#003135] rounded-2xl font-bold transition-all"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button 
+                                        onClick={confirmDelete}
+                                        className="flex-1 py-4 bg-rose-500 hover:bg-rose-600 text-white rounded-2xl font-bold shadow-lg shadow-rose-500/30 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                                    >
+                                        Delete Forever
+                                    </button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };

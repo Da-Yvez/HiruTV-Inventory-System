@@ -8,7 +8,8 @@ import {
     LayoutGrid, 
     Save, 
     AlertCircle,
-    CheckCircle2
+    CheckCircle2,
+    AlertTriangle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -17,6 +18,7 @@ const DepartmentManagement = () => {
     const [newDept, setNewDept] = useState('');
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState(null);
+    const [deptToDeleteModal, setDeptToDeleteModal] = useState(null);
 
     const departments = currentSite?.departments || [];
 
@@ -35,10 +37,14 @@ const DepartmentManagement = () => {
     };
 
     const handleDeleteDept = (deptToDelete) => {
-        if (!window.confirm(`Are you sure you want to remove the "${deptToDelete}" department?`)) return;
-        
-        const updatedDepts = departments.filter(d => d !== deptToDelete);
+        setDeptToDeleteModal(deptToDelete);
+    };
+
+    const confirmDeleteDept = () => {
+        if (!deptToDeleteModal) return;
+        const updatedDepts = departments.filter(d => d !== deptToDeleteModal);
         saveDepartments(updatedDepts);
+        setDeptToDeleteModal(null);
     };
 
     const saveDepartments = async (updatedDepts) => {
@@ -79,7 +85,7 @@ const DepartmentManagement = () => {
                         <form onSubmit={handleAddDept} className="space-y-4">
                             <div className="space-y-1.5">
                                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Department Name</label>
-                                <input 
+                                <input maxLength={100} 
                                     value={newDept}
                                     onChange={(e) => setNewDept(e.target.value)}
                                     placeholder="e.g. Production"
@@ -162,6 +168,47 @@ const DepartmentManagement = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Custom Delete Confirmation Modal */}
+            <AnimatePresence>
+                {deptToDeleteModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                        <motion.div 
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                            className="bg-white w-full max-w-md rounded-[32px] shadow-2xl p-8"
+                        >
+                            <div className="flex flex-col items-center text-center">
+                                <div className="w-16 h-16 bg-rose-50 text-rose-500 rounded-2xl flex items-center justify-center mb-6">
+                                    <AlertTriangle size={32} />
+                                </div>
+                                <h3 className="text-2xl font-black text-[#003135] mb-2">Delete Department?</h3>
+                                <p className="text-slate-500 font-medium mb-8">
+                                    Are you sure you want to remove the 
+                                    <span className="font-bold text-[#003135]"> "{deptToDeleteModal}" </span> 
+                                    department? 
+                                </p>
+                                
+                                <div className="flex gap-4 w-full">
+                                    <button 
+                                        onClick={() => setDeptToDeleteModal(null)}
+                                        className="flex-1 py-4 bg-slate-100 hover:bg-slate-200 text-[#003135] rounded-2xl font-bold transition-all"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button 
+                                        onClick={confirmDeleteDept}
+                                        className="flex-1 py-4 bg-rose-500 hover:bg-rose-600 text-white rounded-2xl font-bold shadow-lg shadow-rose-500/30 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                                    >
+                                        Remove
+                                    </button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };

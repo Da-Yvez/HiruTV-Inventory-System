@@ -102,7 +102,7 @@ const DashboardLayout = ({ children, activeSection, onSectionChange }) => {
                         </li>
                         <li>
                             <a 
-                                href="https://docs.google.com/spreadsheets/d/1fkAexdvowZ5z7QblipLsGbKfaSuvamp1O-7vqNkYow0/edit?usp=sharing"
+                                href={process.env.NEXT_PUBLIC_NAME_LIST_URL || "#"}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="w-full flex items-center p-3 text-[#5A6C6D] hover:bg-slate-50 hover:text-[#003135] rounded-xl transition-all"

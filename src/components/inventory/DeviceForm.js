@@ -11,11 +11,14 @@ import {
     Keyboard, 
     FileText,
     Save,
-    Info
+    Info,
+    Eye,
+    EyeOff
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const DeviceForm = ({ isOpen, onClose, onSave, initialData = null, departments = [], isReadOnly = false }) => {
+    const [showLicense, setShowLicense] = useState({});
     const [formData, setFormData] = useState({
         pcNumber: '',
         pcModel: '',
@@ -156,7 +159,7 @@ const DeviceForm = ({ isOpen, onClose, onSave, initialData = null, departments =
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div className="space-y-1.5">
                                 <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">{formData.deviceType === 'pc' ? 'PC Number' : 'Asset ID'} *</label>
-                                <input 
+                                <input maxLength={100} 
                                     required
                                     name="pcNumber"
                                     value={formData.pcNumber}
@@ -168,7 +171,7 @@ const DeviceForm = ({ isOpen, onClose, onSave, initialData = null, departments =
                             </div>
                             <div className="space-y-1.5">
                                 <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">{formData.deviceType === 'pc' ? 'PC Model' : 'Model/Type'} *</label>
-                                <input 
+                                <input maxLength={100} 
                                     required
                                     name="pcModel"
                                     value={formData.pcModel}
@@ -180,7 +183,7 @@ const DeviceForm = ({ isOpen, onClose, onSave, initialData = null, departments =
                             </div>
                             <div className="space-y-1.5">
                                 <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Serial Number *</label>
-                                <input 
+                                <input maxLength={100} 
                                     required
                                     name="pcSerial"
                                     value={formData.pcSerial}
@@ -210,7 +213,7 @@ const DeviceForm = ({ isOpen, onClose, onSave, initialData = null, departments =
                             </div>
                             <div className="space-y-1.5">
                                 <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">User Name</label>
-                                <input 
+                                <input maxLength={100} 
                                     name="userName"
                                     value={formData.userName}
                                     onChange={handleChange}
@@ -247,19 +250,19 @@ const DeviceForm = ({ isOpen, onClose, onSave, initialData = null, departments =
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                             <div className="space-y-1.5">
                                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">CPU</label>
-                                <input disabled={isReadOnly} name="cpu" value={formData.cpu} onChange={handleChange} placeholder="i7-10700" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#003135] text-sm disabled:opacity-70" />
+                                <input maxLength={100} disabled={isReadOnly} name="cpu" value={formData.cpu} onChange={handleChange} placeholder="i7-10700" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#003135] text-sm disabled:opacity-70" />
                             </div>
                             <div className="space-y-1.5">
                                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">GPU</label>
-                                <input disabled={isReadOnly} name="gpu" value={formData.gpu} onChange={handleChange} placeholder="GTX 1660" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#003135] text-sm disabled:opacity-70" />
+                                <input maxLength={100} disabled={isReadOnly} name="gpu" value={formData.gpu} onChange={handleChange} placeholder="GTX 1660" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#003135] text-sm disabled:opacity-70" />
                             </div>
                             <div className="space-y-1.5">
                                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">RAM</label>
-                                <input disabled={isReadOnly} name="ram" value={formData.ram} onChange={handleChange} placeholder="16GB" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#003135] text-sm disabled:opacity-70" />
+                                <input maxLength={100} disabled={isReadOnly} name="ram" value={formData.ram} onChange={handleChange} placeholder="16GB" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#003135] text-sm disabled:opacity-70" />
                             </div>
                             <div className="space-y-1.5">
                                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Storage</label>
-                                <input disabled={isReadOnly} name="storage" value={formData.storage} onChange={handleChange} placeholder="512GB SSD" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#003135] text-sm disabled:opacity-70" />
+                                <input maxLength={100} disabled={isReadOnly} name="storage" value={formData.storage} onChange={handleChange} placeholder="512GB SSD" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#003135] text-sm disabled:opacity-70" />
                             </div>
                         </div>
                     </section>
@@ -306,7 +309,7 @@ const DeviceForm = ({ isOpen, onClose, onSave, initialData = null, departments =
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                                         <div className="space-y-1.5">
                                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Interface Name</label>
-                                            <input 
+                                            <input maxLength={100} 
                                                 disabled={isReadOnly}
                                                 placeholder="e.g. LAN, WiFi"
                                                 value={iface.interfaceName}
@@ -316,7 +319,7 @@ const DeviceForm = ({ isOpen, onClose, onSave, initialData = null, departments =
                                         </div>
                                         <div className="space-y-1.5">
                                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">IP Address</label>
-                                            <input 
+                                            <input maxLength={100} 
                                                 disabled={isReadOnly}
                                                 placeholder="192.168.1.10"
                                                 value={iface.ipAddress}
@@ -326,7 +329,7 @@ const DeviceForm = ({ isOpen, onClose, onSave, initialData = null, departments =
                                         </div>
                                         <div className="space-y-1.5">
                                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Subnet Mask</label>
-                                            <input 
+                                            <input maxLength={100} 
                                                 disabled={isReadOnly}
                                                 placeholder="255.255.255.0"
                                                 value={iface.subnetMask}
@@ -352,7 +355,7 @@ const DeviceForm = ({ isOpen, onClose, onSave, initialData = null, departments =
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                                         <div className="space-y-1.5">
                                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Gateway</label>
-                                            <input 
+                                            <input maxLength={100} 
                                                 disabled={isReadOnly}
                                                 placeholder="192.168.1.1"
                                                 value={iface.gateway}
@@ -362,7 +365,7 @@ const DeviceForm = ({ isOpen, onClose, onSave, initialData = null, departments =
                                         </div>
                                         <div className="space-y-1.5">
                                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">DNS Servers</label>
-                                            <input 
+                                            <input maxLength={100} 
                                                 disabled={isReadOnly}
                                                 placeholder="8.8.8.8, 8.8.4.4"
                                                 value={iface.dns}
@@ -372,7 +375,7 @@ const DeviceForm = ({ isOpen, onClose, onSave, initialData = null, departments =
                                         </div>
                                         <div className="space-y-1.5">
                                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">MAC Address</label>
-                                            <input 
+                                            <input maxLength={100} 
                                                 disabled={isReadOnly}
                                                 placeholder="00:1A:2B..."
                                                 value={iface.macAddress}
@@ -427,7 +430,7 @@ const DeviceForm = ({ isOpen, onClose, onSave, initialData = null, departments =
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                         <div className="space-y-1.5">
                                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Software Name</label>
-                                            <input 
+                                            <input maxLength={100} 
                                                 disabled={isReadOnly}
                                                 placeholder="e.g. MS Office 2021"
                                                 value={software.name}
@@ -437,17 +440,28 @@ const DeviceForm = ({ isOpen, onClose, onSave, initialData = null, departments =
                                         </div>
                                         <div className="space-y-1.5">
                                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">License Key</label>
-                                            <input 
-                                                disabled={isReadOnly}
-                                                placeholder="XXXXX-XXXXX..."
-                                                value={software.licenseKey}
-                                                onChange={(e) => handleListChange('softwareLicenses', idx, 'licenseKey', e.target.value)}
-                                                className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-[#003135] text-sm font-mono disabled:bg-slate-50 disabled:opacity-70"
-                                            />
+                                            <div className="relative">
+                                                <input maxLength={100} 
+                                                    disabled={isReadOnly}
+                                                    type={showLicense[idx] ? "text" : "password"}
+                                                    placeholder="XXXXX-XXXXX..."
+                                                    value={software.licenseKey}
+                                                    onChange={(e) => handleListChange('softwareLicenses', idx, 'licenseKey', e.target.value)}
+                                                    className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-[#003135] text-sm font-mono disabled:bg-slate-50 disabled:opacity-70 pr-10"
+                                                />
+                                                <button 
+                                                    type="button"
+                                                    onClick={() => setShowLicense(prev => ({...prev, [idx]: !prev[idx]}))}
+                                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#003135]"
+                                                    title={showLicense[idx] ? "Hide License Key" : "Show License Key"}
+                                                >
+                                                    {showLicense[idx] ? <EyeOff size={16} /> : <Eye size={16} />}
+                                                </button>
+                                            </div>
                                         </div>
                                         <div className="space-y-1.5">
                                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Licensed To</label>
-                                            <input 
+                                            <input maxLength={100} 
                                                 disabled={isReadOnly}
                                                 placeholder="Name"
                                                 value={software.licensedTo}
@@ -459,7 +473,7 @@ const DeviceForm = ({ isOpen, onClose, onSave, initialData = null, departments =
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
                                         <div className="space-y-1.5">
                                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Expiry Date</label>
-                                            <input 
+                                            <input maxLength={100} 
                                                 disabled={isReadOnly}
                                                 type="date"
                                                 value={software.expiryDate}
@@ -469,7 +483,7 @@ const DeviceForm = ({ isOpen, onClose, onSave, initialData = null, departments =
                                         </div>
                                         <div className="space-y-1.5">
                                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Version</label>
-                                            <input 
+                                            <input maxLength={100} 
                                                 disabled={isReadOnly}
                                                 placeholder="v1.0"
                                                 value={software.version}
@@ -479,7 +493,7 @@ const DeviceForm = ({ isOpen, onClose, onSave, initialData = null, departments =
                                         </div>
                                         <div className="space-y-1.5">
                                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Notes</label>
-                                            <input 
+                                            <input maxLength={100} 
                                                 disabled={isReadOnly}
                                                 placeholder="Additional info"
                                                 value={software.notes}
@@ -518,7 +532,7 @@ const DeviceForm = ({ isOpen, onClose, onSave, initialData = null, departments =
                                     <div className="flex-1 grid grid-cols-2 gap-4">
                                         <div className="space-y-1">
                                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Model</label>
-                                            <input 
+                                            <input maxLength={100} 
                                                 disabled={isReadOnly}
                                                 placeholder="Monitor Model"
                                                 value={monitor.model}
@@ -528,7 +542,7 @@ const DeviceForm = ({ isOpen, onClose, onSave, initialData = null, departments =
                                         </div>
                                         <div className="space-y-1">
                                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Serial</label>
-                                            <input 
+                                            <input maxLength={100} 
                                                 disabled={isReadOnly}
                                                 placeholder="Monitor Serial"
                                                 value={monitor.serial}
@@ -577,7 +591,7 @@ const DeviceForm = ({ isOpen, onClose, onSave, initialData = null, departments =
                                     <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4">
                                         <div className="space-y-1">
                                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Device Name</label>
-                                            <input 
+                                            <input maxLength={100} 
                                                 disabled={isReadOnly}
                                                 placeholder="e.g. Keyboard"
                                                 value={io.name}
@@ -587,7 +601,7 @@ const DeviceForm = ({ isOpen, onClose, onSave, initialData = null, departments =
                                         </div>
                                         <div className="space-y-1">
                                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Model</label>
-                                            <input 
+                                            <input maxLength={100} 
                                                 disabled={isReadOnly}
                                                 placeholder="Model"
                                                 value={io.model}
@@ -597,7 +611,7 @@ const DeviceForm = ({ isOpen, onClose, onSave, initialData = null, departments =
                                         </div>
                                         <div className="space-y-1">
                                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Serial</label>
-                                            <input 
+                                            <input maxLength={100} 
                                                 disabled={isReadOnly}
                                                 placeholder="Serial"
                                                 value={io.serial}
@@ -652,7 +666,7 @@ const DeviceForm = ({ isOpen, onClose, onSave, initialData = null, departments =
                                         <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6">
                                             <div className="space-y-1.5">
                                                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Field Name</label>
-                                                <input 
+                                                <input maxLength={100} 
                                                     disabled={isReadOnly}
                                                     placeholder="e.g. IP Address"
                                                     value={field.label}
@@ -662,7 +676,7 @@ const DeviceForm = ({ isOpen, onClose, onSave, initialData = null, departments =
                                             </div>
                                             <div className="space-y-1.5">
                                                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Value</label>
-                                                <input 
+                                                <input maxLength={100} 
                                                     disabled={isReadOnly}
                                                     placeholder="Enter value"
                                                     value={field.value}
@@ -693,7 +707,7 @@ const DeviceForm = ({ isOpen, onClose, onSave, initialData = null, departments =
                             <FileText size={18} />
                             <h3>Inventory Notes</h3>
                         </div>
-                        <textarea 
+                        <textarea maxLength={500} 
                             disabled={isReadOnly}
                             name="inventoryNotes"
                             value={formData.inventoryNotes}
