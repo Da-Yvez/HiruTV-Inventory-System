@@ -8,6 +8,7 @@ import SiteSelection from '@/components/auth/SiteSelection';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import InventoryTable from '@/components/inventory/InventoryTable';
 import ActivityLogs from '@/components/inventory/ActivityLogs';
+import DepartmentManagement from '@/components/settings/DepartmentManagement';
 
 export default function Home() {
   const { user, loading: authLoading } = useAuth();
@@ -62,6 +63,8 @@ export default function Home() {
           </>
         ) : activeSection === 'logs' ? (
           <ActivityLogs />
+        ) : activeSection === 'departments' ? (
+          <DepartmentManagement />
         ) : (
           <div className="flex flex-col items-center justify-center p-20 text-slate-400">
              <h1 className="text-2xl font-bold">Coming Soon</h1>

@@ -112,6 +112,37 @@ const DashboardLayout = ({ children, activeSection, onSectionChange }) => {
                             </a>
                         </li>
                     </ul>
+
+                    {/* Settings Section */}
+                    <div className="mt-8 px-6 mb-2">
+                        {isSidebarOpen ? (
+                            <motion.p 
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                className="text-[10px] font-bold text-[#5A6C6D] uppercase tracking-wider"
+                            >
+                                Settings
+                            </motion.p>
+                        ) : (
+                            <div className="h-px bg-[#D1DDDE] w-full" />
+                        )}
+                    </div>
+                    <ul className="space-y-2 px-3">
+                        <li>
+                            <button 
+                                onClick={() => onSectionChange('departments')}
+                                className={`
+                                    w-full flex items-center p-3 rounded-xl transition-all duration-200
+                                    ${activeSection === 'departments' 
+                                        ? 'bg-[#003135] text-white shadow-lg shadow-[#003135]/20' 
+                                        : 'text-[#5A6C6D] hover:bg-slate-50 hover:text-[#003135]'}
+                                `}
+                            >
+                                <span className="min-w-[40px] flex justify-center"><Settings size={20} /></span>
+                                {isSidebarOpen && <span className="ml-2 font-semibold">Departments</span>}
+                            </button>
+                        </li>
+                    </ul>
                 </nav>
 
 
