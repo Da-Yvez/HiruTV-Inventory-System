@@ -23,6 +23,8 @@ const DeviceForm = ({ isOpen, onClose, onSave, initialData = null, departments =
         department: '',
         userName: '',
         status: 'active',
+        deviceType: 'pc',
+        customFields: [],
         cpu: '',
         gpu: '',
         ram: '',
@@ -52,6 +54,8 @@ const DeviceForm = ({ isOpen, onClose, onSave, initialData = null, departments =
                 department: '',
                 userName: '',
                 status: 'active',
+                deviceType: 'pc',
+                customFields: [],
                 cpu: '',
                 gpu: '',
                 ram: '',
@@ -123,39 +127,59 @@ const DeviceForm = ({ isOpen, onClose, onSave, initialData = null, departments =
 
                 {/* Form Body */}
                 <form id="device-form" onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-8 space-y-8">
+                    {/* Device Type Toggle */}
+                    {!isReadOnly && (
+                        <div className="flex p-1.5 bg-slate-100 rounded-2xl w-fit mx-auto mb-4">
+                            <button 
+                                type="button"
+                                onClick={() => setFormData(prev => ({ ...prev, deviceType: 'pc' }))}
+                                className={`px-8 py-2 rounded-xl text-sm font-black transition-all ${formData.deviceType === 'pc' ? 'bg-[#003135] text-white shadow-lg' : 'text-slate-500 hover:text-[#003135]'}`}
+                            >
+                                COMPUTER / PC
+                            </button>
+                            <button 
+                                type="button"
+                                onClick={() => setFormData(prev => ({ ...prev, deviceType: 'other' }))}
+                                className={`px-8 py-2 rounded-xl text-sm font-black transition-all ${formData.deviceType === 'other' ? 'bg-[#003135] text-white shadow-lg' : 'text-slate-500 hover:text-[#003135]'}`}
+                            >
+                                OTHER ASSET
+                            </button>
+                        </div>
+                    )}
+                    
                     {/* Basic Information */}
                     <section className="space-y-4">
                         <div className="flex items-center gap-2 text-[#003135] font-bold">
                             <Info size={18} />
-                            <h3>Basic Information</h3>
+                            <h3>{formData.deviceType === 'pc' ? 'Computer' : 'Asset'} Information</h3>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div className="space-y-1.5">
-                                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">PC Number *</label>
+                                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">{formData.deviceType === 'pc' ? 'PC Number' : 'Asset ID'} *</label>
                                 <input 
                                     required
                                     name="pcNumber"
                                     value={formData.pcNumber}
                                     onChange={handleChange}
                                     disabled={isReadOnly}
-                                    placeholder="e.g. PC-001"
+                                    placeholder={formData.deviceType === 'pc' ? "e.g. PC-001" : "e.g. SW-001"}
                                     className="w-full px-5 py-3 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:outline-none focus:border-[#003135] focus:bg-white transition-all font-bold text-[#003135] disabled:opacity-70 disabled:cursor-not-allowed"
                                 />
                             </div>
                             <div className="space-y-1.5">
-                                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">PC Model *</label>
+                                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">{formData.deviceType === 'pc' ? 'PC Model' : 'Model/Type'} *</label>
                                 <input 
                                     required
                                     name="pcModel"
                                     value={formData.pcModel}
                                     onChange={handleChange}
                                     disabled={isReadOnly}
-                                    placeholder="e.g. Dell OptiPlex 7080"
+                                    placeholder={formData.deviceType === 'pc' ? "e.g. Dell OptiPlex" : "e.g. Cisco Switch"}
                                     className="w-full px-5 py-3 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:outline-none focus:border-[#003135] focus:bg-white transition-all font-medium disabled:opacity-70 disabled:cursor-not-allowed"
                                 />
                             </div>
                             <div className="space-y-1.5">
-                                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">PC Serial *</label>
+                                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Serial Number *</label>
                                 <input 
                                     required
                                     name="pcSerial"
@@ -174,6 +198,7 @@ const DeviceForm = ({ isOpen, onClose, onSave, initialData = null, departments =
                                     required
                                     name="department"
                                     value={formData.department}
+                                    onChange={handleChange}
                                     disabled={isReadOnly}
                                     className="w-full px-5 py-3 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:outline-none focus:border-[#003135] focus:bg-white transition-all font-bold text-[#003135] appearance-none disabled:opacity-70 disabled:cursor-not-allowed"
                                 >
@@ -211,8 +236,10 @@ const DeviceForm = ({ isOpen, onClose, onSave, initialData = null, departments =
                         </div>
                     </section>
 
-                    {/* Specifications */}
-                    <section className="space-y-4">
+                    {formData.deviceType === 'pc' ? (
+                        <>
+                            {/* Specifications */}
+                            <section className="space-y-4">
                         <div className="flex items-center gap-2 text-[#003135] font-bold">
                             <Cpu size={18} />
                             <h3>System Specifications</h3>
@@ -592,6 +619,72 @@ const DeviceForm = ({ isOpen, onClose, onSave, initialData = null, departments =
                             ))}
                         </div>
                     </section>
+                        </>
+                    ) : (
+                        /* Custom Fields for Other Assets */
+                        <section className="space-y-4">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2 text-[#003135] font-bold">
+                                    <div className="w-8 h-8 bg-[#003135]/5 rounded-lg flex items-center justify-center text-[#003135]">
+                                        <Plus size={18} />
+                                    </div>
+                                    <h3>Custom Specifications</h3>
+                                </div>
+                                {!isReadOnly && (
+                                    <button 
+                                        type="button"
+                                        onClick={() => addListItem('customFields', { label: '', value: '' })}
+                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-[#003135] hover:text-white text-[#003135] rounded-xl text-xs font-bold transition-all"
+                                    >
+                                        <Plus size={14} /> Add Field
+                                    </button>
+                                )}
+                            </div>
+                            <div className="grid grid-cols-1 gap-4">
+                                {formData.customFields.length === 0 && !isReadOnly && (
+                                    <div className="p-12 text-center border-2 border-dashed border-slate-100 rounded-[32px] text-slate-400">
+                                        <p className="font-bold">No custom fields added</p>
+                                        <p className="text-xs">Add fields like IP Address, Firmware, Port Count, etc.</p>
+                                    </div>
+                                )}
+                                {formData.customFields.map((field, idx) => (
+                                    <div key={idx} className="flex gap-4 items-end bg-slate-50/50 p-4 rounded-2xl border border-slate-100 relative group/custom">
+                                        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div className="space-y-1.5">
+                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Field Name</label>
+                                                <input 
+                                                    disabled={isReadOnly}
+                                                    placeholder="e.g. IP Address"
+                                                    value={field.label}
+                                                    onChange={(e) => handleListChange('customFields', idx, 'label', e.target.value)}
+                                                    className="w-full px-5 py-3 bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-[#003135] font-bold text-[#003135] disabled:opacity-70"
+                                                />
+                                            </div>
+                                            <div className="space-y-1.5">
+                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Value</label>
+                                                <input 
+                                                    disabled={isReadOnly}
+                                                    placeholder="Enter value"
+                                                    value={field.value}
+                                                    onChange={(e) => handleListChange('customFields', idx, 'value', e.target.value)}
+                                                    className="w-full px-5 py-3 bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-[#003135] disabled:opacity-70"
+                                                />
+                                            </div>
+                                        </div>
+                                        {!isReadOnly && (
+                                            <button 
+                                                type="button"
+                                                onClick={() => removeListItem('customFields', idx)}
+                                                className="p-3 text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
+                                            >
+                                                <Trash2 size={20} />
+                                            </button>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        </section>
+                    )}
 
 
                     {/* Inventory Notes */}

@@ -25,6 +25,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { addLog } from '@/lib/utils';
 import DeviceForm from './DeviceForm';
+import * as XLSX from 'xlsx';
 
 const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelectedDevice }) => {
     const { currentSite } = useSite();
@@ -91,6 +92,49 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
             console.error("Error deleting device:", error);
             alert("Failed to delete device.");
         }
+    };
+
+    const handleExport = () => {
+        const exportData = filteredDevices.map(device => {
+            const data = {
+                'Asset ID': device.pcNumber,
+                'Model/Type': device.pcModel,
+                'Serial Number': device.pcSerial,
+                'Department': device.department,
+                'User': device.userName || 'Unassigned',
+                'Status': device.status?.toUpperCase(),
+                'IP Addresses': device.networkInterfaces?.map(i => i.ipAddress).filter(Boolean).join(', ') || 'N/A',
+            };
+
+            // Default to PC if deviceType is missing (for existing assets)
+            if (!device.deviceType || device.deviceType === 'pc') {
+                data['CPU'] = device.cpu || '';
+                data['RAM'] = device.ram || '';
+                data['Storage'] = device.storage || '';
+                data['GPU'] = device.gpu || '';
+                data['Monitors'] = device.monitors?.map(m => `${m.model} (${m.serial})`).join(' | ') || '';
+                data['IO Devices'] = device.ioDevices?.map(i => `${i.name}: ${i.model}`).join(' | ') || '';
+                data['Software'] = device.softwareLicenses?.map(s => s.name).join(', ') || '';
+            } else {
+                device.customFields?.forEach(field => {
+                    if (field.label) data[field.label] = field.value;
+                });
+            }
+
+            data['Notes'] = device.inventoryNotes || '';
+            data['Added By'] = device.createdBy || 'System';
+            data['Created Date'] = device.createdAt ? new Date(device.createdAt.seconds * 1000).toLocaleDateString() : 'N/A';
+
+            return data;
+        });
+
+        const worksheet = XLSX.utils.json_to_sheet(exportData);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Inventory");
+        
+        // Style adjustments (optional but nice)
+        const fileName = `${currentSite.name}_Inventory_${new Date().toISOString().split('T')[0]}.xlsx`;
+        XLSX.writeFile(workbook, fileName);
     };
 
     const handleSave = async (formData) => {
@@ -249,7 +293,11 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
                         <Plus size={22} strokeWidth={3} />
                         ADD DEVICE
                     </button>
-                    <button className="flex items-center justify-center w-[60px] h-[60px] bg-emerald-50 text-emerald-600 rounded-[24px] hover:bg-emerald-600 hover:text-white transition-all border border-emerald-100">
+                    <button 
+                        onClick={handleExport}
+                        className="flex items-center justify-center w-[60px] h-[60px] bg-emerald-50 text-emerald-600 rounded-[24px] hover:bg-emerald-600 hover:text-white transition-all border border-emerald-100"
+                        title="Export to Excel"
+                    >
                         <Download size={22} />
                     </button>
                 </div>
