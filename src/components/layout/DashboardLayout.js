@@ -13,20 +13,21 @@ import {
     ChevronRight,
     Monitor,
     ShieldCheck,
-    Cpu
+    Cpu,
+    Download,
+    FileSpreadsheet
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-const DashboardLayout = ({ children }) => {
+const DashboardLayout = ({ children, activeSection, onSectionChange }) => {
     const { user, logout } = useAuth();
     const { currentSite, clearSite } = useSite();
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
     const menuItems = [
-        { id: 'inventory', label: 'Device Inventory', icon: <LayoutDashboard size={20} />, active: true },
+        { id: 'inventory', label: 'Device Inventory', icon: <LayoutDashboard size={20} /> },
         { id: 'addDevice', label: 'Add New Device', icon: <PlusCircle size={20} /> },
         { id: 'logs', label: 'Activity Logs', icon: <History size={20} /> },
-        { id: 'specs', label: 'System Specs', icon: <Cpu size={20} /> },
     ];
 
     return (
@@ -58,19 +59,61 @@ const DashboardLayout = ({ children }) => {
                     <ul className="space-y-2 px-3">
                         {menuItems.map((item) => (
                             <li key={item.id}>
-                                <button className={`
-                                    w-full flex items-center p-3 rounded-xl transition-all duration-200
-                                    ${item.active 
-                                        ? 'bg-[#003135] text-white shadow-lg shadow-[#003135]/20' 
-                                        : 'text-[#5A6C6D] hover:bg-slate-50 hover:text-[#003135]'}
-                                `}>
+                                <button 
+                                    onClick={() => onSectionChange(item.id)}
+                                    className={`
+                                        w-full flex items-center p-3 rounded-xl transition-all duration-200
+                                        ${activeSection === item.id 
+                                            ? 'bg-[#003135] text-white shadow-lg shadow-[#003135]/20' 
+                                            : 'text-[#5A6C6D] hover:bg-slate-50 hover:text-[#003135]'}
+                                    `}
+                                >
                                     <span className="min-w-[40px] flex justify-center">{item.icon}</span>
                                     {isSidebarOpen && <span className="ml-2 font-semibold">{item.label}</span>}
                                 </button>
                             </li>
                         ))}
                     </ul>
+
+                    {/* Information Section */}
+                    <div className="mt-8 px-6 mb-2">
+                        {isSidebarOpen ? (
+                            <motion.p 
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                className="text-[10px] font-bold text-[#5A6C6D] uppercase tracking-wider"
+                            >
+                                Information
+                            </motion.p>
+                        ) : (
+                            <div className="h-px bg-[#D1DDDE] w-full" />
+                        )}
+                    </div>
+                    <ul className="space-y-2 px-3">
+                        <li>
+                            <a 
+                                href="/downloads/advisorinstaller.exe"
+                                download
+                                className="w-full flex items-center p-3 text-[#5A6C6D] hover:bg-slate-50 hover:text-[#003135] rounded-xl transition-all"
+                            >
+                                <span className="min-w-[40px] flex justify-center"><Download size={20} /></span>
+                                {isSidebarOpen && <span className="ml-2 font-semibold">Download App</span>}
+                            </a>
+                        </li>
+                        <li>
+                            <a 
+                                href="https://docs.google.com/spreadsheets/d/1fkAexdvowZ5z7QblipLsGbKfaSuvamp1O-7vqNkYow0/edit?usp=sharing"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="w-full flex items-center p-3 text-[#5A6C6D] hover:bg-slate-50 hover:text-[#003135] rounded-xl transition-all"
+                            >
+                                <span className="min-w-[40px] flex justify-center"><FileSpreadsheet size={20} /></span>
+                                {isSidebarOpen && <span className="ml-2 font-semibold">Name List</span>}
+                            </a>
+                        </li>
+                    </ul>
                 </nav>
+
 
                 {/* Sidebar Footer */}
                 <div className="p-3 border-t border-[#D1DDDE]">
