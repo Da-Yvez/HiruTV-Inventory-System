@@ -17,8 +17,9 @@ export default function UserManagement() {
     const [error, setError] = useState(null);
     const [modalState, setModalState] = useState({ open: false, mode: 'create', user: null });
     const [deleteConfirm, setDeleteConfirm] = useState(null); // uid of user pending delete
-    const [resetResult, setResetResult] = useState(null); // { email, link }
-    const [copiedLink, setCopiedLink] = useState(false);
+    const [resetConfirm, setResetConfirm] = useState(null); // uid of user pending reset
+    const [resetPassword, setResetPassword] = useState('');
+    const [resetSuccess, setResetSuccess] = useState(null); // email of reset user
     const [actionLoading, setActionLoading] = useState(null); // uid of user being actioned
 
     const fetchUsers = useCallback(async () => {
@@ -59,17 +60,30 @@ export default function UserManagement() {
         }
     };
 
-    const handleResetPassword = async (uid) => {
+    const handleResetPassword = async (uid, password) => {
+        if (!password || password.length < 6) {
+            setError("Password must be at least 6 characters");
+            return;
+        }
         setActionLoading(uid);
         try {
             const token = await getAuthToken();
             const res = await fetch(`/api/users/${uid}/reset-password`, {
                 method: 'POST',
-                headers: { Authorization: `Bearer ${token}` }
+                headers: { 
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}` 
+                },
+                body: JSON.stringify({ password })
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.error);
-            setResetResult({ email: data.email, link: data.resetLink });
+            
+            const user = users.find(u => u.uid === uid);
+            setResetSuccess(user?.email);
+            setResetConfirm(null);
+            setResetPassword('');
+            setTimeout(() => setResetSuccess(null), 5000);
         } catch (e) {
             setError(e.message);
         } finally {
@@ -120,31 +134,16 @@ export default function UserManagement() {
                 </div>
             )}
 
-            {/* Reset Password Result */}
-            {resetResult && (
-                <div className="mb-6 bg-teal-50 border border-teal-200 rounded-xl p-5">
-                    <div className="flex items-center justify-between mb-3">
-                        <p className="font-bold text-[#003135] flex items-center gap-2">
-                            <KeyRound size={16} className="text-[#00A3A8]" />
-                            Password Reset Link for {resetResult.email}
-                        </p>
-                        <button onClick={() => setResetResult(null)}>
-                            <X size={16} className="text-slate-400 hover:text-slate-600" />
-                        </button>
+            {/* Reset Success Banner */}
+            {resetSuccess && (
+                <div className="mb-6 bg-teal-50 border border-teal-200 rounded-xl p-4 flex items-center justify-between">
+                    <div className="flex items-center gap-3 text-teal-700 font-bold text-sm">
+                        <Check size={18} />
+                        Password for {resetSuccess} has been reset. They will be forced to change it on their next login.
                     </div>
-                    <p className="text-xs text-slate-500 mb-2">Share this link with the user — it expires after 1 hour.</p>
-                    <div className="flex items-center gap-2">
-                        <code className="flex-1 bg-white border border-teal-200 rounded-lg px-3 py-2 text-xs text-slate-700 overflow-x-auto whitespace-nowrap block">
-                            {resetResult.link}
-                        </code>
-                        <button
-                            onClick={copyLink}
-                            className="shrink-0 flex items-center gap-1.5 px-3 py-2 bg-[#003135] text-white rounded-lg text-xs font-bold transition-all"
-                        >
-                            {copiedLink ? <Check size={14} /> : <Copy size={14} />}
-                            {copiedLink ? 'Copied!' : 'Copy'}
-                        </button>
-                    </div>
+                    <button onClick={() => setResetSuccess(null)}>
+                        <X size={16} className="text-teal-400 hover:text-teal-600" />
+                    </button>
                 </div>
             )}
 
@@ -230,18 +229,45 @@ export default function UserManagement() {
                                     <td className="px-6 py-4">
                                         <div className="flex items-center justify-end gap-2">
                                             {/* Reset password */}
-                                            <button
-                                                onClick={() => handleResetPassword(u.uid)}
-                                                disabled={actionLoading === u.uid}
-                                                title="Reset Password"
-                                                className="p-2 text-slate-400 hover:text-[#00A3A8] hover:bg-teal-50 rounded-lg transition-all"
-                                            >
-                                                {actionLoading === u.uid ? (
-                                                    <RefreshCw size={16} className="animate-spin" />
-                                                ) : (
-                                                    <KeyRound size={16} />
-                                                )}
-                                            </button>
+                                            {resetConfirm === u.uid ? (
+                                                <div className="flex items-center gap-2 pr-2">
+                                                    <input 
+                                                        type="text"
+                                                        value={resetPassword}
+                                                        onChange={(e) => setResetPassword(e.target.value)}
+                                                        placeholder="New password"
+                                                        className="w-32 px-2 py-1 border border-[#00A3A8] rounded-lg text-xs focus:outline-none"
+                                                        autoFocus
+                                                        onKeyDown={(e) => e.key === 'Enter' && handleResetPassword(u.uid, resetPassword)}
+                                                    />
+                                                    <button
+                                                        onClick={() => handleResetPassword(u.uid, resetPassword)}
+                                                        disabled={actionLoading === u.uid}
+                                                        className="p-1.5 bg-[#00A3A8] text-white rounded-lg hover:bg-[#008a8e]"
+                                                    >
+                                                        <Check size={14} />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => { setResetConfirm(null); setResetPassword(''); }}
+                                                        className="p-1.5 bg-slate-100 text-slate-400 rounded-lg"
+                                                    >
+                                                        <X size={14} />
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <button
+                                                    onClick={() => setResetConfirm(u.uid)}
+                                                    disabled={actionLoading === u.uid}
+                                                    title="Override Password"
+                                                    className="p-2 text-slate-400 hover:text-[#00A3A8] hover:bg-teal-50 rounded-lg transition-all"
+                                                >
+                                                    {actionLoading === u.uid ? (
+                                                        <RefreshCw size={16} className="animate-spin" />
+                                                    ) : (
+                                                        <KeyRound size={16} />
+                                                    )}
+                                                </button>
+                                            )}
 
                                             {/* Edit */}
                                             <button

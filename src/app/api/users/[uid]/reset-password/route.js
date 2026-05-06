@@ -22,16 +22,26 @@ export async function POST(request, { params }) {
     }
 
     const { uid } = await params;
+    const { password } = await request.json();
 
-    // Get the user's email from Auth
-    const authUser = await adminAuth.getUser(uid);
-    if (!authUser.email) {
-        return Response.json({ error: 'User has no email address' }, { status: 400 });
+    if (!password || password.length < 6) {
+        return Response.json({ error: 'Password must be at least 6 characters' }, { status: 400 });
     }
 
-    // Generate a password reset link (Firebase sends the email)
-    const link = await adminAuth.generatePasswordResetLink(authUser.email);
+    try {
+        // 1. Update the password in Firebase Auth
+        await adminAuth.updateUser(uid, {
+            password: password
+        });
 
-    // Return the link so the admin can share it manually (or Firebase sends it if actionCodeSettings configured)
-    return Response.json({ success: true, resetLink: link, email: authUser.email });
+        // 2. Mark for forced change on next login in Firestore
+        await adminDb.collection('users').doc(uid).update({
+            forcePasswordChange: true
+        });
+
+        return Response.json({ success: true });
+    } catch (e) {
+        console.error('Manual reset failed:', e);
+        return Response.json({ error: 'Failed to reset password' }, { status: 500 });
+    }
 }
