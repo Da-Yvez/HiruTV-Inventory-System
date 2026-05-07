@@ -33,6 +33,7 @@ const DashboardLayout = ({ children, activeSection, onSectionChange, isSystemMod
     const mainMenuItems = isSystemMode ? [
         { id: 'users', label: 'User Management', icon: <Users size={20} />, show: user?.isAdmin === true },
         { id: 'qrSecurity', label: 'QR Security', icon: <QrCode size={20} />, show: user?.isSuperAdmin === true },
+        { id: 'systemLogs', label: 'System Logs', icon: <History size={20} />, show: user?.isAdmin === true },
     ].filter(item => item.show) : [
         { id: 'inventory',  label: 'Device Inventory',  icon: <LayoutDashboard size={20} />, show: hasPermission(user, 'canAccessWTC') || hasPermission(user, 'canAccessHLS') },
         { id: 'addDevice',  label: 'Add New Device',    icon: <PlusCircle size={20} />,      show: hasPermission(user, 'wtc_canAdd') || hasPermission(user, 'hls_canAdd') },

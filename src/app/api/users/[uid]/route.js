@@ -91,6 +91,16 @@ export async function PATCH(request, { params }) {
         await adminDb.collection('users').doc(uid).update(firestoreUpdate);
     }
 
+    // Log the user update
+    const { adminDb } = await import('@/lib/firebaseAdmin');
+    const { FieldValue } = await import('firebase-admin/firestore');
+    await adminDb.collection('systemLogs').add({
+        action: 'User Updated',
+        details: `Updated user profile for: ${targetData.email}`,
+        user: caller.email,
+        timestamp: FieldValue.serverTimestamp()
+    });
+
     return Response.json({ success: true });
 }
 
@@ -121,6 +131,16 @@ export async function DELETE(request, { params }) {
 
     await adminAuth.deleteUser(uid);
     await adminDb.collection('users').doc(uid).delete();
+
+    // Log the user deletion
+    const { adminDb } = await import('@/lib/firebaseAdmin');
+    const { FieldValue } = await import('firebase-admin/firestore');
+    await adminDb.collection('systemLogs').add({
+        action: 'User Deleted',
+        details: `Deleted user: ${targetData.email}`,
+        user: caller.email,
+        timestamp: FieldValue.serverTimestamp()
+    });
 
     return Response.json({ success: true });
 }

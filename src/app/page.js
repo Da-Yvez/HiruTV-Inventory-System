@@ -13,6 +13,7 @@ import ActivityLogs from '@/components/inventory/ActivityLogs';
 import DepartmentManagement from '@/components/settings/DepartmentManagement';
 import UserManagement from '@/components/users/UserManagement';
 import QRSecurity from '@/components/settings/QRSecurity';
+import SystemLogs from '@/components/settings/SystemLogs';
 import QRPrinting from '@/components/inventory/QRPrinting';
 import ForcePasswordChange from '@/components/auth/ForcePasswordChange';
 
@@ -91,6 +92,8 @@ export default function Home() {
             <UserManagement />
           ) : activeSection === 'qrSecurity' ? (
             <QRSecurity />
+          ) : activeSection === 'systemLogs' ? (
+            <SystemLogs />
           ) : (
             <ComingSoon onBack={() => setActiveSection('users')} />
           )}

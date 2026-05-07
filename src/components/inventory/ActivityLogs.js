@@ -1,8 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { db } from '@/lib/firebase';
-import { collection, onSnapshot, query, orderBy, limit } from 'firebase/firestore';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '@/context/AuthContext';
 import { useSite } from '@/context/SiteContext';
 import { 
     Search, 
@@ -10,36 +9,92 @@ import {
     RefreshCcw, 
     User,
     Calendar,
-    ArrowRight
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const ActivityLogs = () => {
     const { currentSite } = useSite();
+    const { getAuthToken } = useAuth();
     const [logs, setLogs] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
 
-    useEffect(() => {
-        if (!currentSite) return;
+    const fetchLogs = useCallback(async () => {
+        if (!currentSite?.logsCollection) return;
 
-        const q = query(
-            collection(db, currentSite.logsCollection),
-            orderBy('timestamp', 'desc'),
-            limit(100)
-        );
+        setLoading(true);
+        try {
+            const token = await getAuthToken();
+            if (!token) {
+                console.warn('[ActivityLogs] No auth token available.');
+                setLoading(false);
+                return;
+            }
 
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const logList = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            }));
-            setLogs(logList);
+            // Fetch site-specific logs
+            const siteResPromise = fetch(
+                `/api/logs?collection=${currentSite.logsCollection}&limit=100`,
+                { 
+                    headers: { Authorization: `Bearer ${token}` },
+                    cache: 'no-store'
+                }
+            );
+
+            // Fetch system-wide logs (logins, etc.)
+            const systemResPromise = fetch(
+                `/api/logs?collection=systemLogs&limit=100`,
+                { 
+                    headers: { Authorization: `Bearer ${token}` },
+                    cache: 'no-store'
+                }
+            );
+
+            const [siteRes, systemRes] = await Promise.all([siteResPromise, systemResPromise]);
+
+            let allLogs = [];
+
+            if (siteRes.ok) {
+                const { logs: siteLogs } = await siteRes.json();
+                allLogs = [...allLogs, ...(siteLogs || [])];
+            } else {
+                const errData = await siteRes.json().catch(() => ({}));
+                console.error('[ActivityLogs] API error fetching site logs:', errData.error || 'Unknown error');
+            }
+
+            if (systemRes.ok) {
+                const { logs: sysLogs } = await systemRes.json();
+                allLogs = [...allLogs, ...(sysLogs || [])];
+            } else {
+                const errData = await systemRes.json().catch(() => ({}));
+                console.error('[ActivityLogs] API error fetching system logs:', errData.error || 'Unknown error');
+            }
+
+            // Merge, sort by timestamp descending, and take top 100
+            allLogs.sort((a, b) => {
+                const timeA = typeof a.timestamp === 'number' ? a.timestamp : (a.timestamp?.seconds ? a.timestamp.seconds * 1000 : 0);
+                const timeB = typeof b.timestamp === 'number' ? b.timestamp : (b.timestamp?.seconds ? b.timestamp.seconds * 1000 : 0);
+                return timeB - timeA;
+            });
+
+            setLogs(allLogs.slice(0, 100));
+        } catch (error) {
+            console.error('[ActivityLogs] Fetch error:', error);
+            setLogs([]);
+        } finally {
             setLoading(false);
-        });
+        }
+    }, [currentSite, getAuthToken]);
 
-        return () => unsubscribe();
-    }, [currentSite]);
+    // Initial load
+    useEffect(() => {
+        fetchLogs();
+    }, [fetchLogs]);
+
+    // Auto-refresh every 15 seconds so new logs appear without a full reload
+    useEffect(() => {
+        const interval = setInterval(fetchLogs, 15000);
+        return () => clearInterval(interval);
+    }, [fetchLogs]);
 
     const filteredLogs = logs.filter(log => {
         const matchesSearch = 
@@ -56,6 +111,14 @@ const ActivityLogs = () => {
         if (a.includes('edit') || a.includes('updated')) return 'bg-amber-50 text-amber-600 border-amber-100';
         if (a.includes('delete') || a.includes('removed')) return 'bg-rose-50 text-rose-600 border-rose-100';
         return 'bg-blue-50 text-blue-600 border-blue-100';
+    };
+
+    // Format timestamp — comes back as milliseconds (number) from the API
+    const formatTimestamp = (ts) => {
+        if (!ts) return 'N/A';
+        // API returns millis; legacy Firestore Timestamp object has .seconds
+        const ms = typeof ts === 'number' ? ts : (ts.seconds ? ts.seconds * 1000 : null);
+        return ms ? new Date(ms).toLocaleString() : 'N/A';
     };
 
     if (loading) {
@@ -75,15 +138,24 @@ const ActivityLogs = () => {
                     <p className="text-slate-500 font-medium">Recent system actions and changes</p>
                 </div>
                 
-                <div className="relative w-80">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                        type="text"
-                        placeholder="Search logs..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-12 pr-4 py-3 bg-white border border-[#D1DDDE] rounded-2xl focus:outline-none focus:border-[#003135] transition-all shadow-sm"
-                    />
+                <div className="flex items-center gap-3">
+                    <div className="relative w-80">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                        <input 
+                            type="text"
+                            placeholder="Search logs..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full pl-12 pr-4 py-3 bg-white border border-[#D1DDDE] rounded-2xl focus:outline-none focus:border-[#003135] transition-all shadow-sm"
+                        />
+                    </div>
+                    <button
+                        onClick={fetchLogs}
+                        className="flex items-center justify-center w-12 h-12 bg-slate-50 hover:bg-[#003135] text-slate-500 hover:text-white rounded-2xl border border-[#D1DDDE] transition-all"
+                        title="Refresh logs"
+                    >
+                        <RefreshCcw size={18} />
+                    </button>
                 </div>
             </div>
 
@@ -131,9 +203,7 @@ const ActivityLogs = () => {
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-widest">
                                                 <Calendar size={14} />
-                                                {log.timestamp?.seconds 
-                                                    ? new Date(log.timestamp.seconds * 1000).toLocaleString() 
-                                                    : log.timestamp || 'N/A'}
+                                                {formatTimestamp(log.timestamp)}
                                             </div>
                                         </td>
                                     </motion.tr>

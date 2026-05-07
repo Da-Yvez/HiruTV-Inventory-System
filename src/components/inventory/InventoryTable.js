@@ -6,15 +6,15 @@ import { collection, onSnapshot, query, orderBy, doc, updateDoc, serverTimestamp
 import { useSite } from '@/context/SiteContext';
 import { useAuth } from '@/context/AuthContext';
 import { hasPermission } from '@/lib/permissions';
-import { 
-    Search, 
-    Filter, 
-    Download, 
-    RefreshCcw, 
-    Edit, 
-    Eye, 
-    Trash2, 
-    CheckSquare, 
+import {
+    Search,
+    Filter,
+    Download,
+    RefreshCcw,
+    Edit,
+    Eye,
+    Trash2,
+    CheckSquare,
     Square,
     MoreHorizontal,
     Plus,
@@ -61,15 +61,15 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
                 ...doc.data(),
                 id: doc.id,
             }));
-            
+
             // DISABLED DEDUPLICATION TO ALLOW MANUAL CLEANUP
             // const uniqueMap = new Map();
             // ...
-            const uniqueList = deviceList; 
-            const sortedDevices = uniqueList.sort((a, b) => 
+            const uniqueList = deviceList;
+            const sortedDevices = uniqueList.sort((a, b) =>
                 (a.pcNumber || '').localeCompare(b.pcNumber || '', undefined, { numeric: true, sensitivity: 'base' })
             );
-            
+
             setDevices(sortedDevices);
             setLoading(false);
         });
@@ -123,7 +123,7 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
 
     const confirmDelete = async () => {
         if (!deviceToDelete) return;
-        
+
         try {
             await deleteDoc(doc(db, currentSite.firebaseCollection, deviceToDelete.id));
             await addLog(currentSite, user, 'Device Deleted', `Deleted device ${deviceToDelete.pcNumber} (${deviceToDelete.pcModel})`);
@@ -192,9 +192,11 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
             const storeSheet = XLSX.utils.json_to_sheet(storeData);
             XLSX.utils.book_append_sheet(workbook, storeSheet, "Department Stores");
         }
-        
+
         const fileName = `${currentSite.name}_Inventory_${new Date().toISOString().split('T')[0]}.xlsx`;
         XLSX.writeFile(workbook, fileName);
+        // Log the export
+        addLog(currentSite, user, 'Inventory Exported', `Exported ${filteredDevices.length} device(s) to ${fileName}`);
     };
 
     const handleSave = async (formData) => {
@@ -203,22 +205,22 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
             // Sanitize it to replace slashes with dashes for valid Firestore paths
             const sanitizedId = formData.pcNumber.replace(/\//g, '-').trim();
             const deviceRef = doc(db, currentSite.firebaseCollection, sanitizedId);
-            
+
             // 1. Perform a deep check for uniqueness across the whole collection
             const q = query(
                 collection(db, currentSite.firebaseCollection),
                 where('pcNumber', '==', formData.pcNumber.trim())
             );
             const querySnapshot = await getDocs(q);
-            
+
             // If we found a document with this PC Number
             if (!querySnapshot.empty) {
                 const duplicateDoc = querySnapshot.docs[0];
-                
+
                 // CRITICAL FIX: If we are editing, and the "duplicate" we found is actually 
                 // the clean ID we are trying to move to, ALLOW IT. This fixes the legacy ID migration issue.
                 const isMigratingToCleanId = selectedDevice && duplicateDoc.id === sanitizedId;
-                
+
                 if (!isMigratingToCleanId && (!selectedDevice || duplicateDoc.id !== selectedDevice.id)) {
                     alert(`Error: A device with PC Number "${formData.pcNumber}" already exists in ${currentSite.name}.`);
                     return;
@@ -227,7 +229,7 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
 
             const isRenamingDoc = selectedDevice && selectedDevice.id !== sanitizedId;
             const isChangingPcNumber = selectedDevice && selectedDevice.pcNumber !== formData.pcNumber.trim();
-            
+
             // Maintain a list of old PC Numbers so printed QR codes never break
             const legacyKeys = selectedDevice?.legacyKeys || [];
             if (isChangingPcNumber && !legacyKeys.includes(selectedDevice.pcNumber)) {
@@ -256,7 +258,7 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
             } else {
                 await setDoc(deviceRef, dataToSave, { merge: true });
             }
-            
+
             if (selectedDevice) {
                 await addLog(currentSite, user, 'Device Edited', `Updated device ${formData.pcNumber}`);
             } else {
@@ -274,7 +276,7 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
 
     const filteredDevices = devices.filter(device => {
         const s = searchTerm.toLowerCase();
-        const matchesSearch = 
+        const matchesSearch =
             (device.pcNumber?.toLowerCase().includes(s)) ||
             (device.pcModel?.toLowerCase().includes(s)) ||
             (device.pcSerial?.toLowerCase().includes(s)) ||
@@ -285,7 +287,7 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
             device.monitors?.some(mon => mon.serial?.toLowerCase().includes(s)) ||
             // IO Device Serials
             device.ioDevices?.some(io => io.serial?.toLowerCase().includes(s));
-        
+
         const matchesDept = selectedDepts.length === 0 || selectedDepts.includes(device.department);
 
         return matchesSearch && matchesDept;
@@ -314,7 +316,7 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
                 <div className="flex flex-col sm:flex-row items-center gap-6 flex-1">
                     <div className="relative w-full sm:w-96 group">
                         <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-[#003135] transition-colors" size={20} />
-                        <input 
+                        <input
                             type="text"
                             placeholder="Search assets, models, or users..."
                             value={searchTerm}
@@ -324,7 +326,7 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
                     </div>
                     <div className="relative w-full sm:w-72 group">
                         <Filter className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-[#003135] transition-colors" size={20} />
-                        <button 
+                        <button
                             onClick={() => setIsDeptFilterOpen(!isDeptFilterOpen)}
                             className="w-full pl-14 pr-10 py-4 bg-slate-50 border-2 border-transparent rounded-[24px] focus:outline-none focus:border-[#003135] focus:bg-white transition-all font-bold text-[#003135] text-left overflow-hidden whitespace-nowrap"
                         >
@@ -338,11 +340,11 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
                         <AnimatePresence>
                             {isDeptFilterOpen && (
                                 <>
-                                    <div 
-                                        className="fixed inset-0 z-30" 
+                                    <div
+                                        className="fixed inset-0 z-30"
                                         onClick={() => setIsDeptFilterOpen(false)}
                                     />
-                                    <motion.div 
+                                    <motion.div
                                         initial={{ opacity: 0, y: 10, scale: 0.95 }}
                                         animate={{ opacity: 1, y: 0, scale: 1 }}
                                         exit={{ opacity: 0, y: 10, scale: 0.95 }}
@@ -351,7 +353,7 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
                                         <div className="p-4 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
                                             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Select Departments</span>
                                             {selectedDepts.length > 0 && (
-                                                <button 
+                                                <button
                                                     onClick={() => setSelectedDepts([])}
                                                     className="text-[10px] font-black text-rose-600 uppercase tracking-widest hover:underline"
                                                 >
@@ -361,11 +363,11 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
                                         </div>
                                         <div className="max-h-64 overflow-y-auto p-2">
                                             {currentSite.departments.map(dept => (
-                                                <label 
+                                                <label
                                                     key={dept}
                                                     className="flex items-center gap-3 p-3 hover:bg-slate-50 rounded-2xl cursor-pointer transition-colors"
                                                 >
-                                                    <input 
+                                                    <input
                                                         type="checkbox"
                                                         checked={selectedDepts.includes(dept)}
                                                         onChange={(e) => {
@@ -389,10 +391,10 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
                         </AnimatePresence>
                     </div>
                 </div>
-                
+
                 <div className="flex items-center gap-4">
                     {canAdd && (
-                        <button 
+                        <button
                             onClick={() => { setSelectedDevice(null); setIsViewMode(false); setIsFormOpen(true); }}
                             className="flex items-center gap-3 px-8 py-4 bg-[#003135] text-white rounded-[24px] font-black tracking-wide hover:bg-[#004145] transition-all shadow-xl shadow-[#003135]/20 hover:scale-[1.02] active:scale-[0.98]"
                         >
@@ -400,7 +402,7 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
                             ADD DEVICE
                         </button>
                     )}
-                    <button 
+                    <button
                         onClick={handleExport}
                         className="flex items-center justify-center w-[60px] h-[60px] bg-emerald-50 text-emerald-600 rounded-[24px] hover:bg-emerald-600 hover:text-white transition-all border border-emerald-100"
                         title="Export to Excel"
@@ -435,22 +437,22 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr className="bg-slate-50 border-b border-slate-100">
-                                 {/* Tally column hidden per user request */}
-                                 {/* {currentSite.name === 'Life Studio' && <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest text-center">Tally</th>} */}
-                                 <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">PC Number</th>
-                                 <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">PC Model</th>
-                                 <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">IP ADDR</th>
-                                 <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">Department</th>
-                                 <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">User</th>
-                                 <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">Added By</th>
-                                 <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">Status</th>
-                                 <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
+                                {/* Tally column hidden per user request */}
+                                {/* {currentSite.name === 'Life Studio' && <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest text-center">Tally</th>} */}
+                                <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">PC Number</th>
+                                <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">PC Model</th>
+                                <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">IP ADDR</th>
+                                <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">Department</th>
+                                <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">User</th>
+                                <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">Added By</th>
+                                <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">Status</th>
+                                <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                             <AnimatePresence>
                                 {filteredDevices.map((device) => (
-                                    <motion.tr 
+                                    <motion.tr
                                         key={device.id}
                                         layout
                                         initial={{ opacity: 0 }}
@@ -471,75 +473,74 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
                                         )} */}
 
                                         <td className="px-6 py-4">
-                                             <div className="flex items-center gap-3">
-                                                 <div className="w-10 h-10 bg-[#003135]/5 rounded-xl flex items-center justify-center text-[#003135] font-black text-sm">
-                                                     {device.pcNumber?.slice(-2)}
-                                                 </div>
-                                                 <span className="text-base font-bold text-[#003135]">{device.pcNumber}</span>
-                                             </div>
-                                         </td>
-                                         <td className="px-6 py-4">
-                                             <span className="text-sm text-slate-600 font-semibold">{device.pcModel}</span>
-                                         </td>
-                                         <td className="px-6 py-4">
-                                             <div className="flex flex-col">
-                                                 <span className="text-sm font-mono font-bold text-[#00A3A8]">{device.networkInterfaces?.[0]?.ipAddress || '---'}</span>
-                                                 {device.networkInterfaces?.length > 1 && (
-                                                     <span className="text-[10px] text-slate-400 font-bold">+{device.networkInterfaces.length - 1} more</span>
-                                                 )}
-                                             </div>
-                                         </td>
-                                         <td className="px-6 py-4">
-                                             <span className="inline-flex px-3 py-1 bg-slate-100 text-[#003135] rounded-lg text-[10px] font-black uppercase tracking-wider border border-slate-200">
-                                                 {device.department}
-                                             </span>
-                                         </td>
-                                         <td className="px-6 py-4">
-                                             <div className="flex items-center gap-2">
-                                                 <div className="w-2 h-2 rounded-full bg-[#003135]/20" />
-                                                 <span className="text-sm font-bold text-slate-700">{device.userName || 'Unassigned'}</span>
-                                             </div>
-                                         </td>
-                                         <td className="px-6 py-4">
-                                             <div className="flex flex-col">
-                                                 <span className="text-sm font-bold text-slate-500">{device.createdBy || 'System'}</span>
-                                                 <span className="text-[10px] text-slate-400 font-medium">
-                                                     {device.createdAt ? new Date(device.createdAt.seconds * 1000).toLocaleDateString() : 'N/A'}
-                                                 </span>
-                                             </div>
-                                         </td>
-                                         <td className="px-6 py-4">
-                                             <span className={`
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 bg-[#003135]/5 rounded-xl flex items-center justify-center text-[#003135] font-black text-sm">
+                                                    {device.pcNumber?.slice(-2)}
+                                                </div>
+                                                <span className="text-base font-bold text-[#003135]">{device.pcNumber}</span>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <span className="text-sm text-slate-600 font-semibold">{device.pcModel}</span>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className="flex flex-col">
+                                                <span className="text-sm font-mono font-bold text-[#00A3A8]">{device.networkInterfaces?.[0]?.ipAddress || '---'}</span>
+                                                {device.networkInterfaces?.length > 1 && (
+                                                    <span className="text-[10px] text-slate-400 font-bold">+{device.networkInterfaces.length - 1} more</span>
+                                                )}
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <span className="inline-flex px-3 py-1 bg-slate-100 text-[#003135] rounded-lg text-[10px] font-black uppercase tracking-wider border border-slate-200">
+                                                {device.department}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-2 h-2 rounded-full bg-[#003135]/20" />
+                                                <span className="text-sm font-bold text-slate-700">{device.userName || 'Unassigned'}</span>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className="flex flex-col">
+                                                <span className="text-sm font-bold text-slate-500">{device.createdBy || 'System'}</span>
+                                                <span className="text-[10px] text-slate-400 font-medium">
+                                                    {device.createdAt ? new Date(device.createdAt.seconds * 1000).toLocaleDateString() : 'N/A'}
+                                                </span>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <span className={`
                                                  inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border
                                                  ${device.status === 'active' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : ''}
                                                  ${device.status === 'in-store' ? 'bg-indigo-50 text-indigo-600 border-indigo-100' : ''}
                                                  ${device.status === 'failed' ? 'bg-rose-50 text-rose-600 border-rose-100' : ''}
                                                  ${device.status === 'replaced' ? 'bg-amber-50 text-amber-600 border-amber-100' : ''}
                                              `}>
-                                                <div className={`w-1.5 h-1.5 rounded-full ${
-                                                    device.status === 'active' ? 'bg-emerald-500' : 
-                                                    device.status === 'in-store' ? 'bg-indigo-500' : 
-                                                    device.status === 'failed' ? 'bg-rose-500' : 'bg-amber-500'
-                                                }`} />
+                                                <div className={`w-1.5 h-1.5 rounded-full ${device.status === 'active' ? 'bg-emerald-500' :
+                                                        device.status === 'in-store' ? 'bg-indigo-500' :
+                                                            device.status === 'failed' ? 'bg-rose-500' : 'bg-amber-500'
+                                                    }`} />
                                                 {device.status}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-right">
                                             <div className="flex items-center justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
-                                                <button 
+                                                <button
                                                     onClick={() => handlePrintLabel(device)}
                                                     className="p-2.5 text-[#003135] bg-slate-50 hover:bg-[#003135] hover:text-white rounded-xl transition-all border border-slate-100" title="Print Asset Label"
                                                 >
                                                     <QrCode size={16} />
                                                 </button>
-                                                <button 
+                                                <button
                                                     onClick={() => handleView(device)}
                                                     className="p-2.5 text-[#003135] bg-slate-50 hover:bg-[#003135] hover:text-white rounded-xl transition-all border border-slate-100" title="View Details"
                                                 >
                                                     <Eye size={16} />
                                                 </button>
                                                 {canEdit && (
-                                                    <button 
+                                                    <button
                                                         onClick={() => handleEdit(device)}
                                                         className="p-2.5 text-[#003135] bg-slate-50 hover:bg-[#003135] hover:text-white rounded-xl transition-all border border-slate-100" title="Edit Device"
                                                     >
@@ -547,7 +548,7 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
                                                     </button>
                                                 )}
                                                 {canDelete && (
-                                                    <button 
+                                                    <button
                                                         onClick={() => handleDelete(device)}
                                                         className="p-2.5 text-rose-600 bg-slate-50 hover:bg-rose-600 hover:text-white rounded-xl transition-all border border-slate-100" title="Delete Device"
                                                     >
@@ -572,7 +573,7 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
                 )}
             </div>
 
-            <DeviceForm 
+            <DeviceForm
                 isOpen={isFormOpen}
                 onClose={() => {
                     setIsFormOpen(false);
@@ -585,7 +586,7 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
                 collectionName={currentSite?.firebaseCollection}
             />
 
-            <LabelPrintModal 
+            <LabelPrintModal
                 isOpen={isLabelModalOpen}
                 onClose={() => setIsLabelModalOpen(false)}
                 device={deviceForLabel}
@@ -595,7 +596,7 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
             <AnimatePresence>
                 {deviceToDelete && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-                        <motion.div 
+                        <motion.div
                             initial={{ opacity: 0, scale: 0.95, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -607,19 +608,19 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
                                 </div>
                                 <h3 className="text-2xl font-black text-[#003135] mb-2">Delete Device?</h3>
                                 <p className="text-slate-500 font-medium mb-8">
-                                    Are you sure you want to permanently delete 
-                                    <span className="font-bold text-[#003135]"> {deviceToDelete.pcNumber} </span>? 
+                                    Are you sure you want to permanently delete
+                                    <span className="font-bold text-[#003135]"> {deviceToDelete.pcNumber} </span>?
                                     This action cannot be undone.
                                 </p>
-                                
+
                                 <div className="flex gap-4 w-full">
-                                    <button 
+                                    <button
                                         onClick={() => setDeviceToDelete(null)}
                                         className="flex-1 py-4 bg-slate-100 hover:bg-slate-200 text-[#003135] rounded-2xl font-bold transition-all"
                                     >
                                         Cancel
                                     </button>
-                                    <button 
+                                    <button
                                         onClick={confirmDelete}
                                         className="flex-1 py-4 bg-rose-500 hover:bg-rose-600 text-white rounded-2xl font-bold shadow-lg shadow-rose-500/30 transition-all hover:scale-[1.02] active:scale-[0.98]"
                                     >

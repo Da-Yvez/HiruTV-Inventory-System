@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
 import { useSite } from '@/context/SiteContext';
+import { useAuth } from '@/context/AuthContext';
+import { addLog } from '@/lib/utils';
 import { 
     Printer, 
     Filter, 
@@ -23,6 +25,7 @@ import { createPortal } from 'react-dom';
 
 const QRPrinting = () => {
     const { currentSite } = useSite();
+    const { user } = useAuth();
     const printRef = React.useRef(null);
     const [departments, setDepartments] = useState([]);
     const [selectedDept, setSelectedDept] = useState('All');
@@ -181,6 +184,12 @@ const QRPrinting = () => {
             </html>
         `);
         printWindow.document.close();
+        // Log the QR print batch
+        const printedDeviceIds = selectedDevices
+            .map(id => filteredDevices.find(d => d.id === id)?.pcNumber)
+            .filter(Boolean)
+            .join(', ');
+        addLog(currentSite, user, 'QR Labels Printed', `Printed ${selectedDevices.length} label(s): ${printedDeviceIds}`);
     };
 
     const PrintPreview = () => (

@@ -129,5 +129,13 @@ export async function POST(request) {
         createdBy: caller.uid,
     });
 
+    // Log the user creation
+    await adminDb.collection('systemLogs').add({
+        action: 'User Created',
+        details: `Created new user: ${email} (${isAdmin ? 'Admin' : 'Operator'})`,
+        user: caller.email,
+        timestamp: FieldValue.serverTimestamp()
+    });
+
     return Response.json({ success: true, uid: authUser.uid }, { status: 201 });
 }

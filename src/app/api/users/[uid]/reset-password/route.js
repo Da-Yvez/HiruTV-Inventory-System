@@ -39,6 +39,23 @@ export async function POST(request, { params }) {
             forcePasswordChange: forcePasswordChange
         });
 
+        // 3. Log the action
+        const targetDoc = await adminDb.collection('users').doc(uid).get();
+        const targetData = targetDoc.data();
+        const { FieldValue } = await import('firebase-admin/firestore');
+        const caller = await requireAdmin(request); // We need the caller's email
+        
+        const isViewer = targetData?.email === 'viewer@hirutv.lk';
+        
+        await adminDb.collection('systemLogs').add({
+            action: 'Password Reset',
+            details: isViewer 
+                ? `Updated credentials for the Public QR Viewer portal`
+                : `Manually reset password for: ${targetData?.email || uid}`,
+            user: caller.email,
+            timestamp: FieldValue.serverTimestamp()
+        });
+
         return Response.json({ success: true });
     } catch (e) {
         console.error('Manual reset failed:', e);

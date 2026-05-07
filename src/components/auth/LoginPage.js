@@ -166,7 +166,22 @@ const LoginPage = () => {
       const emailToUse = username.includes('@')
         ? username
         : `${username}${AUTH_DOMAIN_SUFFIX}`;
-      await login(emailToUse, password);
+      const result = await login(emailToUse, password);
+      // Log the login event to the system-wide log collection
+      try {
+        const { getIdToken } = await import('firebase/auth');
+        const token = await getIdToken(result.user);
+        await fetch('/api/logs', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({
+            logsCollection: 'systemLogs',
+            action: 'User Login',
+            details: `User signed in: ${emailToUse}`,
+            user: emailToUse,
+          }),
+        });
+      } catch (_) { /* non-critical */ }
     } catch (err) {
       console.error(err);
       setError('Invalid username or password. Please try again.');

@@ -2,6 +2,8 @@
 
 import React, { useState } from 'react';
 import { useSite } from '@/context/SiteContext';
+import { useAuth } from '@/context/AuthContext';
+import { addLog } from '@/lib/utils';
 import { 
     Plus, 
     Trash2, 
@@ -15,6 +17,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 const DepartmentManagement = () => {
     const { currentSite, updateSiteConfig } = useSite();
+    const { user } = useAuth();
     const [newDept, setNewDept] = useState('');
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState(null);
@@ -32,7 +35,7 @@ const DepartmentManagement = () => {
         }
 
         const updatedDepts = [...departments, newDept.trim()];
-        saveDepartments(updatedDepts);
+        saveDepartments(updatedDepts, 'add', newDept.trim());
         setNewDept('');
     };
 
@@ -43,15 +46,20 @@ const DepartmentManagement = () => {
     const confirmDeleteDept = () => {
         if (!deptToDeleteModal) return;
         const updatedDepts = departments.filter(d => d !== deptToDeleteModal);
-        saveDepartments(updatedDepts);
+        saveDepartments(updatedDepts, 'delete', deptToDeleteModal);
         setDeptToDeleteModal(null);
     };
 
-    const saveDepartments = async (updatedDepts) => {
+    const saveDepartments = async (updatedDepts, action, deptName) => {
         setSaving(true);
         try {
             await updateSiteConfig({ departments: updatedDepts });
             showMessage('Departments updated successfully', 'success');
+            if (action === 'add') {
+                addLog(currentSite, user, 'Department Added', `Added department "${deptName}" to ${currentSite?.fullName}`);
+            } else if (action === 'delete') {
+                addLog(currentSite, user, 'Department Removed', `Removed department "${deptName}" from ${currentSite?.fullName}`);
+            }
         } catch (error) {
             showMessage('Failed to update departments', 'error');
         } finally {
