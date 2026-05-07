@@ -77,113 +77,13 @@ const QRPrinting = () => {
     };
 
     const handlePrint = () => {
-        if (!printRef.current) return;
+        if (selectedDevices.length === 0) return;
         
-        const printWindow = window.open('', '_blank', 'width=800,height=1000');
-        const content = printRef.current.innerHTML;
-        
-        printWindow.document.write(`
-            <html>
-                <head>
-                    <title>Print QR Labels - ${currentSite?.name}</title>
-                    <style>
-                        @page { size: A4; margin: 0; }
-                        body { 
-                            margin: 0; 
-                            padding: 10mm; 
-                            font-family: system-ui, -apple-system, sans-serif;
-                            background: white;
-                        }
-                        .print-grid {
-                            display: grid;
-                            grid-template-columns: 1fr 1fr;
-                            column-gap: 5mm;
-                            row-gap: 8mm;
-                        }
-                        .asset-label-print {
-                            break-inside: avoid;
-                            page-break-inside: avoid;
-                            border: 1px solid #e2e8f0;
-                            display: flex;
-                            width: 95mm;
-                            height: 52mm;
-                            padding: 6mm;
-                            box-sizing: border-box;
-                            align-items: center;
-                            gap: 6mm;
-                            position: relative;
-                            overflow: hidden;
-                            border-radius: 12px;
-                            background: white;
-                            color: #003135;
-                        }
-                        .bg-accent {
-                            position: absolute;
-                            top: 0;
-                            right: 0;
-                            width: 120px;
-                            height: 120px;
-                            background: #f8fafc;
-                            border-radius: 50%;
-                            margin-right: -60px;
-                            margin-top: -60px;
-                            z-index: 0;
-                        }
-                        .qr-section {
-                            position: relative;
-                            z-index: 10;
-                            display: flex;
-                            flex-direction: column;
-                            align-items: center;
-                            gap: 8px;
-                        }
-                        .info-section {
-                            flex: 1;
-                            position: relative;
-                            z-index: 10;
-                            min-width: 0;
-                        }
-                        .side-text {
-                            position: absolute;
-                            right: -28px;
-                            top: 50%;
-                            transform: translateY(-50%) rotate(90deg);
-                            font-size: 8px;
-                            font-weight: 900;
-                            text-transform: uppercase;
-                            letter-spacing: 0.4em;
-                            opacity: 0.1;
-                            white-space: nowrap;
-                        }
-                        .label-title-group { margin-bottom: 8px; }
-                        .site-name { font-size: 9px; font-weight: 900; opacity: 0.5; letter-spacing: 0.2em; text-transform: uppercase; margin: 0; }
-                        .main-title { font-size: 18px; font-weight: 900; margin: 2px 0 0 0; }
-                        .field-group { margin-bottom: 8px; }
-                        .field-label { font-size: 7px; font-weight: 900; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.1em; margin: 0; }
-                        .field-value { font-size: 13px; font-weight: 900; margin: 0; word-break: break-all; }
-                        .row { display: flex; gap: 16px; }
-                        .status-active { color: #10b981; }
-                        .scan-hint { font-size: 6px; font-weight: 900; color: #cbd5e1; text-transform: uppercase; letter-spacing: 0.1em; }
-                        svg { width: 110px; height: 110px; }
-                    </style>
-                </head>
-                <body>
-                    <div class="print-grid">
-                        ${content}
-                    </div>
-                    <script>
-                        // Auto-trigger print
-                        window.onload = () => {
-                            setTimeout(() => {
-                                window.print();
-                                // Optional: window.close();
-                            }, 500);
-                        };
-                    </script>
-                </body>
-            </html>
-        `);
-        printWindow.document.close();
+        // Use a dedicated print page to avoid popup blockers and cross-origin issues on deployment
+        const ids = selectedDevices.join(',');
+        const url = `/print/qr?site=${currentSite.id}&ids=${ids}`;
+        window.open(url, '_blank');
+
         // Log the QR print batch
         const printedDeviceIds = selectedDevices
             .map(id => filteredDevices.find(d => d.id === id)?.pcNumber)
@@ -192,72 +92,7 @@ const QRPrinting = () => {
         addLog(currentSite, user, 'QR Labels Printed', `Printed ${selectedDevices.length} label(s): ${printedDeviceIds}`);
     };
 
-    const PrintPreview = () => (
-        <div className="print-area hidden print:block bg-white">
-            <div className="print-grid grid grid-cols-2 gap-[5mm]">
-                {filteredDevices.filter(d => selectedDevices.includes(d.id)).map(device => {
-                    const publicId = device.qrKey || device.pcNumber.replace(/\//g, '-').trim();
-                    const scanUrl = `${window.location.origin}/scan/${encodeURIComponent(publicId)}`;
-                    
-                    return (
-                        <div key={device.id} className="asset-label-print w-[95mm] h-[50mm] border border-slate-300 rounded-lg p-4 flex items-center gap-4 bg-white overflow-hidden relative">
-                             {/* QR Code */}
-                            <div className="flex flex-col items-center gap-1 shrink-0">
-                                <QRCodeSVG 
-                                    value={scanUrl} 
-                                    size={100}
-                                    level="H"
-                                    includeMargin={false}
-                                />
-                                <span className="text-[6px] font-black text-slate-400 uppercase tracking-tight">Scan for Details</span>
-                            </div>
 
-                            {/* Info */}
-                            <div className="flex-1 min-w-0">
-                                <div className="mb-2">
-                                    <p className="text-[8px] font-black text-[#003135] uppercase tracking-widest opacity-50">{currentSite?.name}</p>
-                                    <h2 className="text-sm font-black text-[#003135] leading-none uppercase">IT Asset Label</h2>
-                                </div>
-                                <div className="space-y-1">
-                                    <div>
-                                        <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest">Asset ID</p>
-                                        <p className="text-sm font-black text-[#003135] truncate leading-tight">{device.pcNumber}</p>
-                                    </div>
-                                    <div className="flex gap-4">
-                                        <div>
-                                            <p className="text-[6px] font-black text-slate-400 uppercase tracking-widest">Dept</p>
-                                            <p className="text-[9px] font-bold text-slate-600 truncate uppercase">{device.department}</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-[6px] font-black text-slate-400 uppercase tracking-widest">Type</p>
-                                            <p className="text-[9px] font-bold text-slate-600 truncate uppercase">{device.deviceType}</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Side Text */}
-                            <div className="absolute -right-6 top-1/2 -translate-y-1/2 rotate-90 opacity-10">
-                                <span className="text-[8px] font-black whitespace-nowrap tracking-widest uppercase">
-                                    {currentSite?.fullName}
-                                </span>
-                            </div>
-                        </div>
-                    );
-                })}
-            </div>
-            
-            <style jsx global>{`
-                .print-hidden-container {
-                    position: absolute;
-                    left: -9999px;
-                    top: -9999px;
-                    visibility: hidden;
-                    pointer-events: none;
-                }
-            `}</style>
-        </div>
-    );
 
     return (
         <div className="space-y-8 no-print">
@@ -361,58 +196,7 @@ const QRPrinting = () => {
             )}
 
 
-            {/* Hidden container to generate HTML for the print window */}
-            <div className="print-hidden-container">
-                <div ref={printRef}>
-                    {filteredDevices.filter(d => selectedDevices.includes(d.id)).map(device => {
-                        const publicId = device.qrKey || device.pcNumber.replace(/\//g, '-').trim();
-                        const scanUrl = `${window.location.origin}/scan/${encodeURIComponent(publicId)}`;
-                        
-                        return (
-                            <div key={device.id} className="asset-label-print">
-                                <div className="bg-accent"></div>
-                                
-                                <div className="qr-section">
-                                    <QRCodeSVG 
-                                        value={scanUrl} 
-                                        size={110} 
-                                        level="H"
-                                        includeMargin={false}
-                                    />
-                                    <span className="scan-hint">Scan or Click to View</span>
-                                </div>
 
-                                <div className="info-section">
-                                    <div className="label-title-group">
-                                        <p className="site-name">{currentSite?.name}</p>
-                                        <h2 className="main-title">IT ASSET</h2>
-                                    </div>
-
-                                    <div className="field-group">
-                                        <p className="field-label">Asset ID / PC Number</p>
-                                        <p className="field-value">{device.pcNumber}</p>
-                                    </div>
-
-                                    <div className="row">
-                                        <div className="field-group">
-                                            <p className="field-label">Department</p>
-                                            <p className="field-value" style={{ fontSize: '10px' }}>{device.department}</p>
-                                        </div>
-                                        <div className="field-group">
-                                            <p className="field-label">Status</p>
-                                            <p className="field-value status-active" style={{ fontSize: '10px' }}>{device.status || 'ACTIVE'}</p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="side-text">
-                                    {currentSite?.fullName}
-                                </div>
-                            </div>
-                        );
-                    })}
-                </div>
-            </div>
         </div>
     );
 };
