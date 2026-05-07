@@ -363,7 +363,7 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
                         <thead>
                             <tr className="bg-slate-50 border-b border-slate-100">
                                  {/* Tally column hidden per user request */}
-                                 {/* {currentSite.name === 'HLS' && <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest text-center">Tally</th>} */}
+                                 {/* {currentSite.name === 'Life Studio' && <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest text-center">Tally</th>} */}
                                  <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">PC Number</th>
                                  <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">PC Model</th>
                                  <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">IP ADDR</th>
@@ -386,7 +386,7 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
                                         className="hover:bg-slate-50/80 transition-colors group"
                                     >
                                         {/* Tally column hidden per user request */}
-                                        {/* {currentSite.name === 'HLS' && (
+                                        {/* {currentSite.name === 'Life Studio' && (
                                             <td className="px-6 py-4 text-center">
                                                 <button 
                                                     onClick={() => toggleTally(device.id, device.isTallied)}

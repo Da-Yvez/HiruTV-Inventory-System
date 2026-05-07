@@ -22,7 +22,7 @@ export const siteConfig = {
     },
     hls: {
         id: 'hls',
-        name: "HLS",
+        name: "Life Studio",
         fullName: "Hiru Life Studio",
         icon: "Globe",
         technicians: ["Navendra"],

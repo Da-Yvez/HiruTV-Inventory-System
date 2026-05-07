@@ -61,7 +61,7 @@ export default function Home() {
   }
 
   // System Settings Mode (Global)
-  if (isSystemSettingsOpen && user?.isAdmin) {
+  if (isSystemSettingsOpen && (user?.isAdmin || user?.isSuperAdmin)) {
     return (
       <DashboardLayout 
         activeSection={activeSection} 

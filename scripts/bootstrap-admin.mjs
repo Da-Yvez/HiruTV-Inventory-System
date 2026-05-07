@@ -45,6 +45,8 @@ const ALL_PERMISSIONS = {
     hls_canDelete:          true,
     canViewLogs:            true,
     canManageDepartments:   true,
+    manage_wtc:             true,
+    manage_hls:             true,
 };
 
 async function main() {
@@ -68,6 +70,7 @@ async function main() {
         email: authUser.email,
         displayName: authUser.displayName || 'Navindra',
         isAdmin: true,
+        isSuperAdmin: true,
         permissions: ALL_PERMISSIONS,
         forcePasswordChange: false, // Don't force for the initial bootstrap admin
         createdAt: (existing.exists && existing.data().createdAt) ? existing.data().createdAt : FieldValue.serverTimestamp(),
@@ -76,9 +79,9 @@ async function main() {
 
     await userRef.set(data, { merge: true });
 
-    console.log(`\n🎉 Success! "${data.displayName}" is now a full Administrator.`);
+    console.log(`\n🎉 Success! "${data.displayName}" is now a Super Administrator.`);
     console.log('   Firestore users/' + authUser.uid + ' has been written.');
-    console.log('\n   You can now log in and create other users from the User Management page.\n');
+    console.log('\n   You can now log in and create other Admins and Users from the User Management page.\n');
 
     process.exit(0);
 }

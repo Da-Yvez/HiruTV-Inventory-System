@@ -6,13 +6,14 @@ import { PERMISSIONS, DEFAULT_PERMISSIONS } from '@/lib/permissions';
 import { X, ShieldCheck, Shield, Loader2, Eye, EyeOff } from 'lucide-react';
 
 export default function UserFormModal({ mode, user, onClose, onSuccess }) {
-    const { getAuthToken } = useAuth();
+    const { getAuthToken, user: currentUser } = useAuth();
     const isEdit = mode === 'edit';
 
     const [displayName, setDisplayName] = useState(user?.displayName || '');
     const [email, setEmail] = useState(user?.email || '');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
+    const [isSuperAdmin, setIsSuperAdmin] = useState(user?.isSuperAdmin || false);
     const [isAdmin, setIsAdmin] = useState(user?.isAdmin || false);
     const [permissions, setPermissions] = useState(user?.permissions || { ...DEFAULT_PERMISSIONS });
     const [loading, setLoading] = useState(false);
@@ -30,29 +31,25 @@ export default function UserFormModal({ mode, user, onClose, onSuccess }) {
         try {
             const token = await getAuthToken();
 
-            if (isEdit) {
-                const res = await fetch(`/api/users/${user.uid}`, {
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: `Bearer ${token}`,
-                    },
-                    body: JSON.stringify({ displayName, isAdmin, permissions }),
-                });
-                const data = await res.json();
-                if (!res.ok) throw new Error(data.error);
-            } else {
-                const res = await fetch('/api/users', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: `Bearer ${token}`,
-                    },
-                    body: JSON.stringify({ email, password, displayName, isAdmin, permissions }),
-                });
-                const data = await res.json();
-                if (!res.ok) throw new Error(data.error);
+            const payload = { displayName, isAdmin, isSuperAdmin, permissions };
+            if (!isEdit) {
+                payload.email = email;
+                payload.password = password;
             }
+
+            const url = isEdit ? `/api/users/${user.uid}` : '/api/users';
+            const method = isEdit ? 'PATCH' : 'POST';
+
+            const res = await fetch(url, {
+                method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify(payload),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error);
 
             onSuccess();
         } catch (e) {
@@ -61,6 +58,23 @@ export default function UserFormModal({ mode, user, onClose, onSuccess }) {
             setLoading(false);
         }
     };
+
+    // Filter permissions for display
+    const visiblePermissions = PERMISSIONS.filter(perm => {
+        // Super Admin sees everything
+        if (currentUser.isSuperAdmin) return true;
+        
+        // Admins can only manage sites they have manage permission for
+        if (perm.key.startsWith('wtc_') || perm.key === 'canAccessWTC' || perm.key === 'manage_wtc') {
+            return currentUser.permissions?.manage_wtc === true;
+        }
+        if (perm.key.startsWith('hls_') || perm.key === 'canAccessHLS' || perm.key === 'manage_hls') {
+            return currentUser.permissions?.manage_hls === true;
+        }
+        
+        // System permissions are Super Admin only in the UI for creation
+        return false;
+    });
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -157,48 +171,132 @@ export default function UserFormModal({ mode, user, onClose, onSuccess }) {
                         </div>
                     )}
 
-                    {/* Admin Toggle */}
-                    <div className="flex items-center justify-between bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
-                        <div className="flex items-center gap-2">
-                            <ShieldCheck size={18} className="text-amber-600" />
-                            <div>
-                                <p className="text-sm font-bold text-amber-800">Administrator</p>
-                                <p className="text-xs text-amber-600">Full access to everything, including user management</p>
+                    {/* Roles Toggles (Only for Super Admin) */}
+                    {(currentUser.isSuperAdmin) && (
+                        <div className="space-y-4">
+                            <label className="block text-xs font-bold text-[#003135] uppercase tracking-wider mb-1">
+                                System Roles
+                            </label>
+                            
+                            {/* Super Admin Toggle */}
+                            <div className="flex items-center justify-between bg-purple-50 border border-purple-200 rounded-xl px-4 py-3">
+                                <div className="flex items-center gap-2">
+                                    <ShieldCheck size={18} className="text-purple-600" />
+                                    <div>
+                                        <p className="text-sm font-bold text-purple-800">Super Administrator</p>
+                                        <p className="text-xs text-purple-600">Top-level control over all users and sites</p>
+                                    </div>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        const newVal = !isSuperAdmin;
+                                        setIsSuperAdmin(newVal);
+                                        if (newVal) setIsAdmin(true);
+                                    }}
+                                    className={`relative w-11 h-6 rounded-full transition-colors duration-200 ${isSuperAdmin ? 'bg-purple-500' : 'bg-slate-200'}`}
+                                >
+                                    <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${isSuperAdmin ? 'translate-x-5' : ''}`} />
+                                </button>
                             </div>
-                        </div>
-                        <button
-                            type="button"
-                            onClick={() => setIsAdmin(!isAdmin)}
-                            className={`relative w-11 h-6 rounded-full transition-colors duration-200 ${isAdmin ? 'bg-amber-500' : 'bg-slate-200'}`}
-                        >
-                            <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${isAdmin ? 'translate-x-5' : ''}`} />
-                        </button>
-                    </div>
 
-                    {/* Permissions Matrix */}
-                    {!isAdmin && (
+                            {/* Admin Toggle */}
+                            <div className="flex items-center justify-between bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+                                <div className="flex items-center gap-2">
+                                    <ShieldCheck size={18} className="text-amber-600" />
+                                    <div>
+                                        <p className="text-sm font-bold text-amber-800">Administrator</p>
+                                        <p className="text-xs text-amber-600">Can manage users for specific sites</p>
+                                    </div>
+                                </div>
+                                <button
+                                    type="button"
+                                    disabled={isSuperAdmin}
+                                    onClick={() => {
+                                        const newVal = !isAdmin;
+                                        setIsAdmin(newVal);
+                                        // If turning off admin, also turn off management perms
+                                        if (!newVal) {
+                                            setPermissions(prev => ({ 
+                                                ...prev, 
+                                                manage_wtc: false, 
+                                                manage_hls: false 
+                                            }));
+                                        }
+                                    }}
+                                    className={`relative w-11 h-6 rounded-full transition-colors duration-200 ${isAdmin ? 'bg-amber-500' : 'bg-slate-200'} ${isSuperAdmin ? 'opacity-50' : ''}`}
+                                >
+                                    <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${isAdmin ? 'translate-x-5' : ''}`} />
+                                </button>
+                            </div>
+
+                            {/* Management Permissions (Nested under Admin) */}
+                            {isAdmin && !isSuperAdmin && (
+                                <div className="pl-4 border-l-2 border-amber-100 space-y-2 mt-2">
+                                    {visiblePermissions.filter(p => p.key.startsWith('manage_')).map(perm => (
+                                        <div key={perm.key} className="flex items-center justify-between py-1">
+                                            <div>
+                                                <p className="text-xs font-bold text-amber-900">{perm.label}</p>
+                                                <p className="text-[10px] text-amber-600">Grants full site control</p>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    const newVal = !permissions[perm.key];
+                                                    setPermissions(prev => {
+                                                        const updated = { ...prev, [perm.key]: newVal };
+                                                        // Auto-assign site permissions if management is enabled
+                                                        if (newVal) {
+                                                            if (perm.key === 'manage_wtc') {
+                                                                updated.canAccessWTC = true;
+                                                                updated.wtc_canAdd = true;
+                                                                updated.wtc_canEdit = true;
+                                                                updated.wtc_canDelete = true;
+                                                            } else if (perm.key === 'manage_hls') {
+                                                                updated.canAccessHLS = true;
+                                                                updated.hls_canAdd = true;
+                                                                updated.hls_canEdit = true;
+                                                                updated.hls_canDelete = true;
+                                                            }
+                                                        }
+                                                        return updated;
+                                                    });
+                                                }}
+                                                className={`relative w-9 h-5 rounded-full transition-colors duration-200 ${permissions[perm.key] ? 'bg-amber-500' : 'bg-slate-200'}`}
+                                            >
+                                                <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200 ${permissions[perm.key] ? 'translate-x-4' : ''}`} />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Permissions Matrix (Non-Management) */}
+                    {!isSuperAdmin && (
                         <div>
-                            <div className="flex items-center gap-2 mb-3">
+                            <div className="flex items-center gap-2 mb-3 mt-4">
                                 <Shield size={16} className="text-[#00A3A8]" />
-                                <p className="text-xs font-bold text-[#003135] uppercase tracking-wider">Permissions</p>
+                                <p className="text-xs font-bold text-[#003135] uppercase tracking-wider">Functional Permissions</p>
                             </div>
                             <div className="space-y-2 border border-[#D1DDDE] rounded-xl overflow-hidden">
-                                {PERMISSIONS.map((perm, idx) => {
+                                {visiblePermissions.filter(p => !p.key.startsWith('manage_')).map((perm, idx, filtered) => {
                                     // Check if we should show a category header
                                     let categoryHeader = null;
-                                    if (idx === 0) categoryHeader = "WTC Site Permissions";
-                                    else if (perm.key === 'canAccessHLS') categoryHeader = "HLS Site Permissions";
+                                    if (perm.key === 'canAccessWTC') categoryHeader = "WTC Site Permissions";
+                                    else if (perm.key === 'canAccessHLS') categoryHeader = "Life Studio Site Permissions";
                                     else if (perm.key === 'canViewLogs') categoryHeader = "System Permissions";
 
                                     return (
                                         <React.Fragment key={perm.key}>
                                             {categoryHeader && (
-                                                <div className="bg-slate-50 px-4 py-2 border-b border-[#D1DDDE] flex items-center gap-2">
+                                                <div className="bg-slate-50 px-4 py-2 border-b border-[#D1DDDE] flex items-center gap-2 mt-2 first:mt-0">
                                                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{categoryHeader}</span>
                                                 </div>
                                             )}
                                             <div
-                                                className={`flex items-center justify-between px-4 py-3 ${idx !== PERMISSIONS.length - 1 ? 'border-b border-[#D1DDDE]/50' : ''} hover:bg-slate-50 transition-colors`}
+                                                className={`flex items-center justify-between px-4 py-3 ${idx !== filtered.length - 1 ? 'border-b border-[#D1DDDE]/50' : ''} hover:bg-slate-50 transition-colors`}
                                             >
                                                 <div>
                                                     <p className="text-sm font-semibold text-[#003135]">{perm.label}</p>
@@ -215,6 +313,11 @@ export default function UserFormModal({ mode, user, onClose, onSuccess }) {
                                         </React.Fragment>
                                     );
                                 })}
+                                {visiblePermissions.filter(p => !p.key.startsWith('manage_')).length === 0 && (
+                                    <div className="p-8 text-center text-slate-400 text-sm">
+                                        No permissions available for you to assign.
+                                    </div>
+                                )}
                             </div>
                         </div>
                     )}

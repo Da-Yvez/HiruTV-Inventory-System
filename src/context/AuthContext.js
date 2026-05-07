@@ -29,6 +29,7 @@ export const AuthProvider = ({ children }) => {
             uid: firebaseUser.uid,
             email: firebaseUser.email,
             displayName: profile.displayName || firebaseUser.displayName || firebaseUser.email.split('@')[0],
+            isSuperAdmin: profile.isSuperAdmin === true,
             isAdmin: profile.isAdmin === true,
             permissions: profile.permissions || {},
             forcePasswordChange: profile.forcePasswordChange === true,

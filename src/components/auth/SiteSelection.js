@@ -113,7 +113,7 @@ const SiteSelection = ({ onOpenSettings }) => {
                     })}
                 </motion.div>
                 
-                {user?.isAdmin && (
+                {(user?.isAdmin || user?.isSuperAdmin) && (
                     <motion.div
                         variants={item}
                         initial="hidden"

@@ -10,13 +10,16 @@ export const PERMISSIONS = [
     { key: 'wtc_canEdit',           label: 'WTC: Edit Items',       description: 'Can edit devices in WTC' },
     { key: 'wtc_canDelete',         label: 'WTC: Delete Items',     description: 'Can delete devices in WTC' },
     
-    { key: 'canAccessHLS',          label: 'HLS: Access Site',      description: 'Can enter the HLS inventory' },
-    { key: 'hls_canAdd',            label: 'HLS: Add Items',        description: 'Can add devices in HLS' },
-    { key: 'hls_canEdit',           label: 'HLS: Edit Items',       description: 'Can edit devices in HLS' },
-    { key: 'hls_canDelete',         label: 'HLS: Delete Items',     description: 'Can delete devices in HLS' },
+    { key: 'canAccessHLS',          label: 'Life Studio: Access Site',      description: 'Can enter the Life Studio inventory' },
+    { key: 'hls_canAdd',            label: 'Life Studio: Add Items',        description: 'Can add devices in Life Studio' },
+    { key: 'hls_canEdit',           label: 'Life Studio: Edit Items',       description: 'Can edit devices in Life Studio' },
+    { key: 'hls_canDelete',         label: 'Life Studio: Delete Items',     description: 'Can delete devices in Life Studio' },
 
     { key: 'canViewLogs',           label: 'View Activity Logs',    description: 'Can view the activity log history' },
     { key: 'canManageDepartments',  label: 'Manage Departments',    description: 'Can add / edit / remove departments' },
+
+    { key: 'manage_wtc',            label: 'Manage WTC Users',      description: 'Can manage users and permissions for WTC' },
+    { key: 'manage_hls',            label: 'Manage Life Studio Users', description: 'Can manage users and permissions for Life Studio' },
 ];
 
 /**
@@ -33,6 +36,8 @@ export const DEFAULT_PERMISSIONS = {
     hls_canDelete:          false,
     canViewLogs:            false,
     canManageDepartments:   false,
+    manage_wtc:             false,
+    manage_hls:             false,
 };
 
 /**
@@ -42,7 +47,21 @@ export const DEFAULT_PERMISSIONS = {
  */
 export function hasPermission(user, key, site = null) {
     if (!user) return false;
-    if (user.isAdmin) return true;
+    
+    // Super Admin has full access to EVERYTHING
+    if (user.isSuperAdmin) return true;
+
+    // Admin has access to site-prefixed actions if they have specific site management permission
+    if (user.isAdmin) {
+        // If checking for user management capabilities
+        if (key === 'manage_wtc' || key === 'manage_hls') {
+            return user.permissions?.[key] === true;
+        }
+        
+        // Admins pass all other checks by default (legacy behavior for non-user management)
+        // Except for explicit Super Admin only actions (if any added later)
+        return true;
+    }
     
     // If it's a site-aware action (add/edit/delete)
     if (site && (key === 'canAdd' || key === 'canEdit' || key === 'canDelete')) {

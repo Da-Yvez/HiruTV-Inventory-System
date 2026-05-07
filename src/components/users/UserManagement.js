@@ -11,7 +11,7 @@ import {
 import UserFormModal from './UserFormModal';
 
 export default function UserManagement() {
-    const { getAuthToken } = useAuth();
+    const { getAuthToken, user: currentUser } = useAuth();
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -189,7 +189,12 @@ export default function UserManagement() {
 
                                     {/* Role cell */}
                                     <td className="px-6 py-4">
-                                        {u.isAdmin ? (
+                                        {u.isSuperAdmin ? (
+                                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-purple-50 border border-purple-200 text-purple-700 rounded-lg text-xs font-bold">
+                                                <ShieldCheck size={12} />
+                                                Super Admin
+                                            </span>
+                                        ) : u.isAdmin ? (
                                             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 border border-amber-200 text-amber-700 rounded-lg text-xs font-bold">
                                                 <ShieldCheck size={12} />
                                                 Administrator
@@ -204,8 +209,17 @@ export default function UserManagement() {
 
                                     {/* Permissions cell */}
                                     <td className="px-6 py-4">
-                                        {u.isAdmin ? (
-                                            <span className="text-xs text-slate-400 italic">Full access</span>
+                                        {u.isSuperAdmin ? (
+                                            <span className="text-xs text-purple-400 italic">Global access</span>
+                                        ) : u.isAdmin ? (
+                                            <div className="flex flex-wrap gap-1.5">
+                                                <span className="text-xs text-amber-500 font-bold mr-1">Admin +</span>
+                                                {permissionSummary(u.permissions).slice(0, 3).map(label => (
+                                                    <span key={label} className="px-2 py-0.5 bg-amber-50 border border-amber-100 text-amber-600 rounded-md text-xs font-medium">
+                                                        {label}
+                                                    </span>
+                                                ))}
+                                            </div>
                                         ) : (
                                             <div className="flex flex-wrap gap-1.5">
                                                 {permissionSummary(u.permissions).slice(0, 4).map(label => (
@@ -227,85 +241,92 @@ export default function UserManagement() {
 
                                     {/* Actions cell */}
                                     <td className="px-6 py-4">
-                                        <div className="flex items-center justify-end gap-2">
-                                            {/* Reset password */}
-                                            {resetConfirm === u.uid ? (
-                                                <div className="flex items-center gap-2 pr-2">
-                                                    <input 
-                                                        type="text"
-                                                        value={resetPassword}
-                                                        onChange={(e) => setResetPassword(e.target.value)}
-                                                        placeholder="New password"
-                                                        className="w-32 px-2 py-1 border border-[#00A3A8] rounded-lg text-xs focus:outline-none"
-                                                        autoFocus
-                                                        onKeyDown={(e) => e.key === 'Enter' && handleResetPassword(u.uid, resetPassword)}
-                                                    />
+                                        {/* Restriction: Admins cannot touch Super Admins or other Admins (unless they ARE super admin) */}
+                                        {(!currentUser.isSuperAdmin && (u.isSuperAdmin || u.isAdmin)) ? (
+                                            <div className="flex justify-end pr-2">
+                                                <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">Protected</span>
+                                            </div>
+                                        ) : (
+                                            <div className="flex items-center justify-end gap-2">
+                                                {/* Reset password */}
+                                                {resetConfirm === u.uid ? (
+                                                    <div className="flex items-center gap-2 pr-2">
+                                                        <input 
+                                                            type="text"
+                                                            value={resetPassword}
+                                                            onChange={(e) => setResetPassword(e.target.value)}
+                                                            placeholder="New password"
+                                                            className="w-32 px-2 py-1 border border-[#00A3A8] rounded-lg text-xs focus:outline-none"
+                                                            autoFocus
+                                                            onKeyDown={(e) => e.key === 'Enter' && handleResetPassword(u.uid, resetPassword)}
+                                                        />
+                                                        <button
+                                                            onClick={() => handleResetPassword(u.uid, resetPassword)}
+                                                            disabled={actionLoading === u.uid}
+                                                            className="p-1.5 bg-[#00A3A8] text-white rounded-lg hover:bg-[#008a8e]"
+                                                        >
+                                                            <Check size={14} />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => { setResetConfirm(null); setResetPassword(''); }}
+                                                            className="p-1.5 bg-slate-100 text-slate-400 rounded-lg"
+                                                        >
+                                                            <X size={14} />
+                                                        </button>
+                                                    </div>
+                                                ) : (
                                                     <button
-                                                        onClick={() => handleResetPassword(u.uid, resetPassword)}
+                                                        onClick={() => setResetConfirm(u.uid)}
                                                         disabled={actionLoading === u.uid}
-                                                        className="p-1.5 bg-[#00A3A8] text-white rounded-lg hover:bg-[#008a8e]"
+                                                        title="Override Password"
+                                                        className="p-2 text-slate-400 hover:text-[#00A3A8] hover:bg-teal-50 rounded-lg transition-all"
                                                     >
-                                                        <Check size={14} />
+                                                        {actionLoading === u.uid ? (
+                                                            <RefreshCw size={16} className="animate-spin" />
+                                                        ) : (
+                                                            <KeyRound size={16} />
+                                                        )}
                                                     </button>
-                                                    <button
-                                                        onClick={() => { setResetConfirm(null); setResetPassword(''); }}
-                                                        className="p-1.5 bg-slate-100 text-slate-400 rounded-lg"
-                                                    >
-                                                        <X size={14} />
-                                                    </button>
-                                                </div>
-                                            ) : (
-                                                <button
-                                                    onClick={() => setResetConfirm(u.uid)}
-                                                    disabled={actionLoading === u.uid}
-                                                    title="Override Password"
-                                                    className="p-2 text-slate-400 hover:text-[#00A3A8] hover:bg-teal-50 rounded-lg transition-all"
-                                                >
-                                                    {actionLoading === u.uid ? (
-                                                        <RefreshCw size={16} className="animate-spin" />
-                                                    ) : (
-                                                        <KeyRound size={16} />
-                                                    )}
-                                                </button>
-                                            )}
+                                                )}
 
-                                            {/* Edit */}
-                                            <button
-                                                onClick={() => setModalState({ open: true, mode: 'edit', user: u })}
-                                                title="Edit User"
-                                                className="p-2 text-slate-400 hover:text-[#003135] hover:bg-slate-100 rounded-lg transition-all"
-                                            >
-                                                <Pencil size={16} />
-                                            </button>
-
-                                            {/* Delete */}
-                                            {deleteConfirm === u.uid ? (
-                                                <div className="flex items-center gap-1">
-                                                    <span className="text-xs text-red-600 font-semibold">Sure?</span>
-                                                    <button
-                                                        onClick={() => handleDelete(u.uid)}
-                                                        disabled={actionLoading === u.uid}
-                                                        className="px-2 py-1 bg-red-600 text-white text-xs font-bold rounded-lg hover:bg-red-700 transition-all"
-                                                    >
-                                                        Yes
-                                                    </button>
-                                                    <button
-                                                        onClick={() => setDeleteConfirm(null)}
-                                                        className="px-2 py-1 bg-slate-100 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-200 transition-all"
-                                                    >
-                                                        No
-                                                    </button>
-                                                </div>
-                                            ) : (
+                                                {/* Edit */}
                                                 <button
-                                                    onClick={() => setDeleteConfirm(u.uid)}
-                                                    title="Delete User"
-                                                    className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                                                    onClick={() => setModalState({ open: true, mode: 'edit', user: u })}
+                                                    title="Edit User"
+                                                    className="p-2 text-slate-400 hover:text-[#003135] hover:bg-slate-100 rounded-lg transition-all"
                                                 >
-                                                    <Trash2 size={16} />
+                                                    <Pencil size={16} />
                                                 </button>
-                                            )}
-                                        </div>
+
+                                                {/* Delete */}
+                                                {deleteConfirm === u.uid ? (
+                                                    <div className="flex items-center gap-1">
+                                                        <span className="text-xs text-red-600 font-semibold">Sure?</span>
+                                                        <button
+                                                            onClick={() => handleDelete(u.uid)}
+                                                            disabled={actionLoading === u.uid}
+                                                            className="px-2 py-1 bg-red-600 text-white text-xs font-bold rounded-lg hover:bg-red-700 transition-all"
+                                                        >
+                                                            Yes
+                                                        </button>
+                                                        <button
+                                                            onClick={() => setDeleteConfirm(null)}
+                                                            className="px-2 py-1 bg-slate-100 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-200 transition-all"
+                                                        >
+                                                            No
+                                                        </button>
+                                                    </div>
+                                                ) : (
+                                                    <button
+                                                        onClick={() => setDeleteConfirm(u.uid)}
+                                                        title="Delete User"
+                                                        className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                )}
+                                            </div>
+                                        )}
                                     </td>
                                 </tr>
                             ))}
