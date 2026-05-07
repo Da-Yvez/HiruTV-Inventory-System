@@ -54,16 +54,9 @@ const LabelPrintModal = ({ isOpen, onClose, device }) => {
                         <div className="flex gap-4">
                             <button 
                                 onClick={onClose}
-                                className="px-8 py-4 text-slate-500 font-black hover:text-[#003135] transition-colors"
-                            >
-                                CANCEL
-                            </button>
-                            <button 
-                                onClick={handlePrint}
                                 className="px-10 py-4 bg-[#003135] text-white rounded-2xl font-black flex items-center gap-3 shadow-xl shadow-[#003135]/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
                             >
-                                <Printer size={20} />
-                                PRINT LABEL
+                                CLOSE PREVIEW
                             </button>
                         </div>
                     </div>

@@ -58,12 +58,11 @@ async function main() {
         isAdmin: false,
         isSuperAdmin: false,
         permissions: {
-            canViewPublicQR: true, // Only this permission!
-            canAccessWTC: false,
+            canAccessWTC: true,
+            canAccessHLS: true,
             wtc_canAdd: false,
             wtc_canEdit: false,
             wtc_canDelete: false,
-            canAccessHLS: false,
             hls_canAdd: false,
             hls_canEdit: false,
             hls_canDelete: false,

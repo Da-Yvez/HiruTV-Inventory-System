@@ -43,7 +43,17 @@ const PublicAssetView = ({ device }) => {
                     <ShieldCheck className="text-white" size={28} />
                 </div>
                 <h1 className="text-2xl font-black text-[#003135] tracking-tight text-center uppercase">Full Asset Profile</h1>
-                <p className="text-slate-400 font-bold mt-1 tracking-[0.4em] text-[10px] uppercase">Hiru TV Infrastructure</p>
+                <p className="text-slate-400 font-bold mt-1 tracking-[0.4em] text-[10px] uppercase">Hiru TV Inventory System</p>
+                <div className="mt-3 opacity-40 hover:opacity-100 transition-opacity">
+                    <a 
+                        href="https://yvexa.dev" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-[9px] font-black text-[#003135] uppercase tracking-[0.4em]"
+                    >
+                        Powered by YVEXA
+                    </a>
+                </div>
             </motion.div>
 
             {/* Main Card */}
@@ -222,18 +232,6 @@ const PublicAssetView = ({ device }) => {
                         </section>
                     </div>
 
-                    {/* Inventory Notes */}
-                    {device.inventoryNotes && (
-                        <section className="space-y-6">
-                            <div className="flex items-center gap-3">
-                                <FileText size={20} className="text-amber-500" />
-                                <h3 className="font-black text-[#003135] uppercase tracking-tight">Maintenance Notes</h3>
-                            </div>
-                            <div className="p-8 bg-amber-50/50 rounded-[32px] border border-amber-100 text-[#003135]/80 font-medium leading-relaxed italic">
-                                "{device.inventoryNotes}"
-                            </div>
-                        </section>
-                    )}
 
                     {/* Footer Info */}
                     <div className="pt-12 border-t border-slate-100 flex flex-col md:flex-row justify-between items-center gap-8">
@@ -249,30 +247,12 @@ const PublicAssetView = ({ device }) => {
                             </div>
                         </div>
                         
-                        <div className="flex items-center gap-3 px-8 py-5 bg-[#003135] text-white rounded-3xl font-black text-[10px] uppercase tracking-[0.3em] shadow-xl shadow-[#003135]/20">
-                            <ExternalLink size={18} />
-                            Hiru TV Authorized View
-                        </div>
                     </div>
                 </div>
             </motion.div>
 
-            {/* Branding Footer */}
-            <div className="mt-12 text-center space-y-4">
-                <p className="text-[#003135] font-black text-[10px] uppercase tracking-[0.8em] opacity-20">
-                    Infrastructure Security Level: Alpha-7
-                </p>
-                <div className="opacity-40 hover:opacity-100 transition-opacity">
-                    <a 
-                        href="https://yvexa.dev" 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-[10px] font-black text-[#003135] uppercase tracking-[0.4em]"
-                    >
-                        Powered by YVEXA
-                    </a>
-                </div>
-            </div>
+            {/* Branding Footer (Simplified) */}
+            <div className="mt-12 text-center h-8" />
         </div>
     );
 };

@@ -1,7 +1,7 @@
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge"
 import { db } from './firebase';
-import { collection, addDoc } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 export function cn(...inputs) {
   return twMerge(clsx(inputs));
@@ -15,7 +15,7 @@ export async function addLog(site, user, action, details) {
             action,
             details,
             user: user?.email || user?.displayName || 'Unknown User',
-            timestamp: new Date().toLocaleString()
+            timestamp: serverTimestamp()
         });
     } catch (error) {
         console.error("Error adding log:", error);

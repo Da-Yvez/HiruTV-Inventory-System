@@ -131,7 +131,9 @@ const ActivityLogs = () => {
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-widest">
                                                 <Calendar size={14} />
-                                                {log.timestamp}
+                                                {log.timestamp?.seconds 
+                                                    ? new Date(log.timestamp.seconds * 1000).toLocaleString() 
+                                                    : log.timestamp || 'N/A'}
                                             </div>
                                         </td>
                                     </motion.tr>
