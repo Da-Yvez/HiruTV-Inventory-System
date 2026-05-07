@@ -19,6 +19,8 @@ import {
     FileSpreadsheet,
     Users,
     ArrowLeftRight,
+    QrCode,
+    Printer,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -30,10 +32,11 @@ const DashboardLayout = ({ children, activeSection, onSectionChange, isSystemMod
     // Main nav — gated by permission
     const mainMenuItems = isSystemMode ? [
         { id: 'users', label: 'User Management', icon: <Users size={20} />, show: user?.isAdmin === true },
-        // Future system features can go here
+        { id: 'qrSecurity', label: 'QR Security', icon: <QrCode size={20} />, show: user?.isSuperAdmin === true },
     ].filter(item => item.show) : [
-        { id: 'inventory',  label: 'Device Inventory',  icon: <LayoutDashboard size={20} />, show: hasPermission(user, 'canView') },
-        { id: 'addDevice',  label: 'Add New Device',    icon: <PlusCircle size={20} />,      show: hasPermission(user, 'canAdd') },
+        { id: 'inventory',  label: 'Device Inventory',  icon: <LayoutDashboard size={20} />, show: hasPermission(user, 'canAccessWTC') || hasPermission(user, 'canAccessHLS') },
+        { id: 'addDevice',  label: 'Add New Device',    icon: <PlusCircle size={20} />,      show: hasPermission(user, 'wtc_canAdd') || hasPermission(user, 'hls_canAdd') },
+        { id: 'qrPrint',    label: 'QR Batch Print',    icon: <Printer size={20} />,         show: hasPermission(user, 'canAccessWTC') || hasPermission(user, 'canAccessHLS') },
         { id: 'logs',       label: 'Activity Logs',     icon: <History size={20} />,          show: hasPermission(user, 'canViewLogs') },
     ].filter(item => item.show);
 

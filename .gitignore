@@ -48,3 +48,6 @@ next-env.d.ts
 # legacy and static versions
 /OLD/
 /legacy/
+
+# temporary scratch files
+/scratch/

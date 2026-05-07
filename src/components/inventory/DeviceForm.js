@@ -17,8 +17,31 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const DeviceForm = ({ isOpen, onClose, onSave, initialData = null, departments = [], isReadOnly = false }) => {
+const DeviceForm = ({ isOpen, onClose, onSave, initialData = null, departments = [], isReadOnly = false, collectionName }) => {
     const [showLicense, setShowLicense] = useState({});
+    const normalizeInterfaces = (interfaces) => {
+        const list = Array.isArray(interfaces) ? interfaces : [];
+        const normalized = list.map((iface) => ({
+            interfaceName: iface?.interfaceName ?? '',
+            ipAddress: iface?.ipAddress ?? '',
+            subnetMask: iface?.subnetMask ?? '255.255.255.0',
+            gateway: iface?.gateway ?? '',
+            dns: iface?.dns ?? '',
+            macAddress: iface?.macAddress ?? '',
+            type: iface?.type ?? 'ethernet',
+        }));
+        return normalized.length > 0
+            ? normalized
+            : [{
+                interfaceName: 'Primary',
+                ipAddress: '',
+                subnetMask: '255.255.255.0',
+                gateway: '',
+                dns: '',
+                macAddress: '',
+                type: 'ethernet',
+            }];
+    };
     const [formData, setFormData] = useState({
         pcNumber: '',
         pcModel: '',
@@ -33,7 +56,15 @@ const DeviceForm = ({ isOpen, onClose, onSave, initialData = null, departments =
         ram: '',
         storage: '',
         inventoryNotes: '',
-        networkInterfaces: [{ interfaceName: 'Primary', ipAddress: '' }],
+        networkInterfaces: [{
+            interfaceName: 'Primary',
+            ipAddress: '',
+            subnetMask: '255.255.255.0',
+            gateway: '',
+            dns: '',
+            macAddress: '',
+            type: 'ethernet',
+        }],
         monitors: [],
         ioDevices: [],
         softwareLicenses: []
@@ -44,7 +75,7 @@ const DeviceForm = ({ isOpen, onClose, onSave, initialData = null, departments =
             setFormData({
                 ...formData,
                 ...initialData,
-                networkInterfaces: initialData.networkInterfaces || [{ interfaceName: 'Primary', ipAddress: '' }],
+                networkInterfaces: normalizeInterfaces(initialData.networkInterfaces),
                 monitors: initialData.monitors || [],
                 ioDevices: initialData.ioDevices || [],
                 softwareLicenses: initialData.softwareLicenses || []
@@ -64,7 +95,7 @@ const DeviceForm = ({ isOpen, onClose, onSave, initialData = null, departments =
                 ram: '',
                 storage: '',
                 inventoryNotes: '',
-                networkInterfaces: [{ interfaceName: 'Primary', ipAddress: '' }],
+                networkInterfaces: normalizeInterfaces([]),
                 monitors: [],
                 ioDevices: [],
                 softwareLicenses: []
@@ -313,7 +344,7 @@ const DeviceForm = ({ isOpen, onClose, onSave, initialData = null, departments =
                                             <input maxLength={100} 
                                                 disabled={isReadOnly}
                                                 placeholder="e.g. LAN, WiFi"
-                                                value={iface.interfaceName}
+                                                value={iface.interfaceName || ''}
                                                 onChange={(e) => handleListChange('networkInterfaces', idx, 'interfaceName', e.target.value)}
                                                 className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-[#003135] text-sm font-bold disabled:bg-slate-50 disabled:opacity-70"
                                             />
@@ -323,7 +354,7 @@ const DeviceForm = ({ isOpen, onClose, onSave, initialData = null, departments =
                                             <input maxLength={100} 
                                                 disabled={isReadOnly}
                                                 placeholder="192.168.1.10"
-                                                value={iface.ipAddress}
+                                                value={iface.ipAddress || ''}
                                                 onChange={(e) => handleListChange('networkInterfaces', idx, 'ipAddress', e.target.value)}
                                                 className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-[#003135] text-sm font-mono text-[#00A3A8] disabled:bg-slate-50 disabled:opacity-70"
                                             />
@@ -333,7 +364,7 @@ const DeviceForm = ({ isOpen, onClose, onSave, initialData = null, departments =
                                             <input maxLength={100} 
                                                 disabled={isReadOnly}
                                                 placeholder="255.255.255.0"
-                                                value={iface.subnetMask}
+                                                value={iface.subnetMask || ''}
                                                 onChange={(e) => handleListChange('networkInterfaces', idx, 'subnetMask', e.target.value)}
                                                 className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-[#003135] text-sm font-mono disabled:bg-slate-50 disabled:opacity-70"
                                             />
@@ -359,7 +390,7 @@ const DeviceForm = ({ isOpen, onClose, onSave, initialData = null, departments =
                                             <input maxLength={100} 
                                                 disabled={isReadOnly}
                                                 placeholder="192.168.1.1"
-                                                value={iface.gateway}
+                                                value={iface.gateway ?? ''}
                                                 onChange={(e) => handleListChange('networkInterfaces', idx, 'gateway', e.target.value)}
                                                 className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-[#003135] text-sm font-mono disabled:bg-slate-50 disabled:opacity-70"
                                             />
@@ -369,7 +400,7 @@ const DeviceForm = ({ isOpen, onClose, onSave, initialData = null, departments =
                                             <input maxLength={100} 
                                                 disabled={isReadOnly}
                                                 placeholder="8.8.8.8, 8.8.4.4"
-                                                value={iface.dns}
+                                                value={iface.dns ?? ''}
                                                 onChange={(e) => handleListChange('networkInterfaces', idx, 'dns', e.target.value)}
                                                 className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-[#003135] text-sm font-mono disabled:bg-slate-50 disabled:opacity-70"
                                             />
@@ -379,7 +410,7 @@ const DeviceForm = ({ isOpen, onClose, onSave, initialData = null, departments =
                                             <input maxLength={100} 
                                                 disabled={isReadOnly}
                                                 placeholder="00:1A:2B..."
-                                                value={iface.macAddress}
+                                                value={iface.macAddress ?? ''}
                                                 onChange={(e) => handleListChange('networkInterfaces', idx, 'macAddress', e.target.value)}
                                                 className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-[#003135] text-sm font-mono disabled:bg-slate-50 disabled:opacity-70"
                                             />
@@ -546,7 +577,7 @@ const DeviceForm = ({ isOpen, onClose, onSave, initialData = null, departments =
                                             <input maxLength={100} 
                                                 disabled={isReadOnly}
                                                 placeholder="Monitor Serial"
-                                                value={monitor.serial}
+                                                value={monitor.serial || ''}
                                                 onChange={(e) => handleListChange('monitors', idx, 'serial', e.target.value)}
                                                 className="w-full px-4 py-2 bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-[#003135] text-sm disabled:bg-slate-50 disabled:opacity-70"
                                             />
@@ -615,7 +646,7 @@ const DeviceForm = ({ isOpen, onClose, onSave, initialData = null, departments =
                                             <input maxLength={100} 
                                                 disabled={isReadOnly}
                                                 placeholder="Serial"
-                                                value={io.serial}
+                                                value={io.serial || ''}
                                                 onChange={(e) => handleListChange('ioDevices', idx, 'serial', e.target.value)}
                                                 className="w-full px-4 py-2 bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-[#003135] text-sm disabled:bg-slate-50 disabled:opacity-70"
                                             />
@@ -721,24 +752,27 @@ const DeviceForm = ({ isOpen, onClose, onSave, initialData = null, departments =
                 </form>
 
                 {/* Footer */}
-                <div className="px-8 py-6 border-t border-slate-100 bg-slate-50/50 flex items-center justify-end gap-4">
-                    <button 
-                        type="button"
-                        onClick={onClose}
-                        className="px-8 py-3 text-slate-500 font-bold hover:text-[#003135] transition-colors"
-                    >
-                        {isReadOnly ? 'Close' : 'Cancel'}
-                    </button>
-                    {!isReadOnly && (
+                <div className="px-8 py-6 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between">
+                    <div />
+                    <div className="flex items-center gap-4">
                         <button 
-                            form="device-form"
-                            type="submit"
-                            className="px-10 py-4 bg-[#003135] text-white rounded-2xl font-bold flex items-center gap-2 shadow-lg shadow-[#003135]/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+                            type="button"
+                            onClick={onClose}
+                            className="px-8 py-3 text-slate-500 font-bold hover:text-[#003135] transition-colors"
                         >
-                            <Save size={20} />
-                            {initialData ? 'Update Device' : 'Save Device'}
+                            {isReadOnly ? 'Close' : 'Cancel'}
                         </button>
-                    )}
+                        {!isReadOnly && (
+                            <button 
+                                form="device-form"
+                                type="submit"
+                                className="px-10 py-4 bg-[#003135] text-white rounded-2xl font-bold flex items-center gap-2 shadow-lg shadow-[#003135]/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+                            >
+                                <Save size={20} />
+                                {initialData ? 'Update Device' : 'Save Device'}
+                            </button>
+                        )}
+                    </div>
                 </div>
             </motion.div>
         </div>

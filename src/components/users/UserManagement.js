@@ -27,12 +27,14 @@ export default function UserManagement() {
         setError(null);
         try {
             const token = await getAuthToken();
+            console.log('[DEBUG] Sending token to /api/users:', token ? token.substring(0, 10) + '...' : 'null');
             const res = await fetch('/api/users', {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (!res.ok) throw new Error((await res.json()).error || 'Failed to load users');
             const { users } = await res.json();
-            setUsers(users);
+            // Hide the system viewer account to keep the work clean
+            setUsers(users.filter(u => u.email !== 'viewer@hirutv.lk'));
         } catch (e) {
             setError(e.message);
         } finally {

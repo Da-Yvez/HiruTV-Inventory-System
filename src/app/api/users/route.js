@@ -7,19 +7,31 @@ import { FieldValue } from 'firebase-admin/firestore';
  * Returns the decoded token or throws.
  */
 async function requireAdmin(request) {
-    const authHeader = request.headers.get('Authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-        throw new Error('UNAUTHORIZED');
-    }
-    const idToken = authHeader.slice(7);
-    const decoded = await adminAuth.verifyIdToken(idToken);
+    try {
+        const authHeader = request.headers.get('Authorization');
+        if (!authHeader?.startsWith('Bearer ')) {
+            console.error('[API] Missing or invalid Authorization header');
+            throw new Error('UNAUTHORIZED');
+        }
+        const idToken = authHeader.slice(7);
+        const decoded = await adminAuth.verifyIdToken(idToken);
 
-    const userDoc = await adminDb.collection('users').doc(decoded.uid).get();
-    const userData = userDoc.data();
-    if (!userDoc.exists || (!userData.isAdmin && !userData.isSuperAdmin)) {
-        throw new Error('FORBIDDEN');
+        const userDoc = await adminDb.collection('users').doc(decoded.uid).get();
+        if (!userDoc.exists) {
+            console.error(`[API] User doc not found in Firestore for UID: ${decoded.uid}`);
+            throw new Error('FORBIDDEN');
+        }
+        
+        const userData = userDoc.data();
+        if (!userData.isAdmin && !userData.isSuperAdmin) {
+            console.error(`[API] User ${decoded.email} is not an admin`);
+            throw new Error('FORBIDDEN');
+        }
+        return { ...decoded, ...userData };
+    } catch (error) {
+        console.error('[API] Admin check failed:', error.message || error);
+        throw error;
     }
-    return { ...decoded, ...userData };
 }
 
 function unauthorized() {
@@ -38,7 +50,8 @@ export async function GET(request) {
     }
 
     const snapshot = await adminDb.collection('users').orderBy('createdAt', 'desc').get();
-    const users = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    // Ensure Firestore doc id isn't overwritten by a stored `id` field.
+    const users = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
     return Response.json({ users });
 }
 

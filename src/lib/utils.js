@@ -22,3 +22,15 @@ export async function addLog(site, user, action, details) {
     }
 }
 
+/**
+ * Generate a random 12-character alphanumeric key for secure QR links.
+ */
+export function generateQRKey() {
+    const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let result = '';
+    for (let i = 0; i < 12; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+}
+

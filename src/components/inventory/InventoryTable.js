@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { db } from '@/lib/firebase';
-import { collection, onSnapshot, query, orderBy, doc, updateDoc, serverTimestamp, deleteDoc, setDoc } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, doc, updateDoc, serverTimestamp, deleteDoc, setDoc, getDoc, where, getDocs, writeBatch } from 'firebase/firestore';
 import { useSite } from '@/context/SiteContext';
 import { useAuth } from '@/context/AuthContext';
 import { hasPermission } from '@/lib/permissions';
@@ -22,14 +22,16 @@ import {
     Activity,
     ShieldAlert,
     Archive,
-    AlertTriangle
+    AlertTriangle,
+    QrCode
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { addLog } from '@/lib/utils';
+import { addLog, generateQRKey } from '@/lib/utils';
 import DeviceForm from './DeviceForm';
+import LabelPrintModal from './LabelPrintModal';
 import * as XLSX from 'xlsx';
 
-const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelectedDevice }) => {
+const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelectedDevice, initialSearch }) => {
     const { currentSite } = useSite();
     const { user } = useAuth();
     const [devices, setDevices] = useState([]);
@@ -39,6 +41,8 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
     const [isDeptFilterOpen, setIsDeptFilterOpen] = useState(false);
     const [isViewMode, setIsViewMode] = useState(false);
     const [deviceToDelete, setDeviceToDelete] = useState(null);
+    const [isLabelModalOpen, setIsLabelModalOpen] = useState(false);
+    const [deviceForLabel, setDeviceForLabel] = useState(null);
 
 
     useEffect(() => {
@@ -50,16 +54,39 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
         );
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
+            // IMPORTANT: Some legacy docs may contain an `id` field in their data.
+            // If we spread data after `id: doc.id`, that legacy field would overwrite the real Firestore document id,
+            // causing duplicate React keys and breaking edit/delete (wrong doc targeted).
             const deviceList = snapshot.docs.map(doc => ({
+                ...doc.data(),
                 id: doc.id,
-                ...doc.data()
             }));
-            setDevices(deviceList);
+            
+            // DISABLED DEDUPLICATION TO ALLOW MANUAL CLEANUP
+            // const uniqueMap = new Map();
+            // ...
+            const uniqueList = deviceList; 
+            const sortedDevices = uniqueList.sort((a, b) => 
+                (a.pcNumber || '').localeCompare(b.pcNumber || '', undefined, { numeric: true, sensitivity: 'base' })
+            );
+            
+            setDevices(sortedDevices);
             setLoading(false);
         });
 
         return () => unsubscribe();
     }, [currentSite]);
+
+    useEffect(() => {
+        if (initialSearch && devices.length > 0) {
+            setSearchTerm(initialSearch);
+            // Auto-open if there's an exact match
+            const exactMatch = devices.find(d => d.pcNumber === initialSearch);
+            if (exactMatch) {
+                handleView(exactMatch);
+            }
+        }
+    }, [initialSearch, devices.length]);
 
     const toggleTally = async (deviceId, currentStatus) => {
         try {
@@ -87,6 +114,11 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
 
     const handleDelete = (device) => {
         setDeviceToDelete(device);
+    };
+
+    const handlePrintLabel = (device) => {
+        setDeviceForLabel(device);
+        setIsLabelModalOpen(true);
     };
 
     const confirmDelete = async () => {
@@ -167,12 +199,45 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
 
     const handleSave = async (formData) => {
         try {
-            const deviceRef = selectedDevice 
-                ? doc(db, currentSite.firebaseCollection, selectedDevice.id)
-                : doc(collection(db, currentSite.firebaseCollection));
+            // Use PC Number as the Primary Key (Document ID)
+            // Sanitize it to replace slashes with dashes for valid Firestore paths
+            const sanitizedId = formData.pcNumber.replace(/\//g, '-').trim();
+            const deviceRef = doc(db, currentSite.firebaseCollection, sanitizedId);
             
+            // 1. Perform a deep check for uniqueness across the whole collection
+            const q = query(
+                collection(db, currentSite.firebaseCollection),
+                where('pcNumber', '==', formData.pcNumber.trim())
+            );
+            const querySnapshot = await getDocs(q);
+            
+            // If we found a document with this PC Number
+            if (!querySnapshot.empty) {
+                const duplicateDoc = querySnapshot.docs[0];
+                
+                // CRITICAL FIX: If we are editing, and the "duplicate" we found is actually 
+                // the clean ID we are trying to move to, ALLOW IT. This fixes the legacy ID migration issue.
+                const isMigratingToCleanId = selectedDevice && duplicateDoc.id === sanitizedId;
+                
+                if (!isMigratingToCleanId && (!selectedDevice || duplicateDoc.id !== selectedDevice.id)) {
+                    alert(`Error: A device with PC Number "${formData.pcNumber}" already exists in ${currentSite.name}.`);
+                    return;
+                }
+            }
+
+            const isRenamingDoc = selectedDevice && selectedDevice.id !== sanitizedId;
+            const isChangingPcNumber = selectedDevice && selectedDevice.pcNumber !== formData.pcNumber.trim();
+            
+            // Maintain a list of old PC Numbers so printed QR codes never break
+            const legacyKeys = selectedDevice?.legacyKeys || [];
+            if (isChangingPcNumber && !legacyKeys.includes(selectedDevice.pcNumber)) {
+                legacyKeys.push(selectedDevice.pcNumber);
+            }
+
             const dataToSave = {
                 ...formData,
+                qrKey: formData.qrKey || selectedDevice?.qrKey || generateQRKey(),
+                legacyKeys,
                 updatedAt: serverTimestamp(),
                 updatedBy: user?.displayName || 'System'
             };
@@ -182,7 +247,15 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
                 dataToSave.createdBy = user?.displayName || 'System';
             }
 
-            await setDoc(deviceRef, dataToSave, { merge: true });
+            if (isRenamingDoc) {
+                // Make rename atomic: write new doc + delete old doc together.
+                const batch = writeBatch(db);
+                batch.set(deviceRef, dataToSave, { merge: true });
+                batch.delete(doc(db, currentSite.firebaseCollection, selectedDevice.id));
+                await batch.commit();
+            } else {
+                await setDoc(deviceRef, dataToSave, { merge: true });
+            }
             
             if (selectedDevice) {
                 await addLog(currentSite, user, 'Device Edited', `Updated device ${formData.pcNumber}`);
@@ -454,6 +527,12 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
                                         <td className="px-6 py-4 text-right">
                                             <div className="flex items-center justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
                                                 <button 
+                                                    onClick={() => handlePrintLabel(device)}
+                                                    className="p-2.5 text-[#003135] bg-slate-50 hover:bg-[#003135] hover:text-white rounded-xl transition-all border border-slate-100" title="Print Asset Label"
+                                                >
+                                                    <QrCode size={16} />
+                                                </button>
+                                                <button 
                                                     onClick={() => handleView(device)}
                                                     className="p-2.5 text-[#003135] bg-slate-50 hover:bg-[#003135] hover:text-white rounded-xl transition-all border border-slate-100" title="View Details"
                                                 >
@@ -495,11 +574,21 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
 
             <DeviceForm 
                 isOpen={isFormOpen}
-                onClose={() => setIsFormOpen(false)}
+                onClose={() => {
+                    setIsFormOpen(false);
+                    setSelectedDevice(null);
+                }}
                 onSave={handleSave}
                 initialData={selectedDevice}
                 departments={currentSite.departments}
                 isReadOnly={isViewMode}
+                collectionName={currentSite?.firebaseCollection}
+            />
+
+            <LabelPrintModal 
+                isOpen={isLabelModalOpen}
+                onClose={() => setIsLabelModalOpen(false)}
+                device={deviceForLabel}
             />
 
             {/* Custom Delete Confirmation Modal */}

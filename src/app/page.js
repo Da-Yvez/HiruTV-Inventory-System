@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useSite } from '@/context/SiteContext';
 import { hasPermission } from '@/lib/permissions';
@@ -11,6 +12,8 @@ import InventoryTable from '@/components/inventory/InventoryTable';
 import ActivityLogs from '@/components/inventory/ActivityLogs';
 import DepartmentManagement from '@/components/settings/DepartmentManagement';
 import UserManagement from '@/components/users/UserManagement';
+import QRSecurity from '@/components/settings/QRSecurity';
+import QRPrinting from '@/components/inventory/QRPrinting';
 import ForcePasswordChange from '@/components/auth/ForcePasswordChange';
 
 export default function Home() {
@@ -22,6 +25,16 @@ export default function Home() {
   // Shared form state
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedDevice, setSelectedDevice] = useState(null);
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const searchId = searchParams.get('search');
+    if (searchId) {
+      setActiveSection('inventory');
+      // The actual device data will be loaded in the InventoryTable
+      // We just need to pass the ID down if we want to auto-open it
+    }
+  }, [searchParams]);
 
   const handleSectionChange = (section) => {
     if (section === 'addDevice') {
@@ -76,6 +89,8 @@ export default function Home() {
           </div>
           {activeSection === 'users' ? (
             <UserManagement />
+          ) : activeSection === 'qrSecurity' ? (
+            <QRSecurity />
           ) : (
             <ComingSoon onBack={() => setActiveSection('users')} />
           )}
@@ -102,8 +117,11 @@ export default function Home() {
               setIsFormOpen={setIsFormOpen}
               selectedDevice={selectedDevice}
               setSelectedDevice={setSelectedDevice}
+              initialSearch={searchParams.get('search')}
             />
           </>
+        ) : activeSection === 'qrPrint' ? (
+          <QRPrinting />
         ) : activeSection === 'logs' ? (
           <ActivityLogs />
         ) : activeSection === 'departments' ? (

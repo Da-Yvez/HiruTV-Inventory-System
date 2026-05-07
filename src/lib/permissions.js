@@ -1,4 +1,4 @@
-import { useAuth } from '@/context/AuthContext';
+// Core permissions logic (shared between client and server)
 
 /**
  * Full list of permission keys with human-readable labels.
@@ -72,11 +72,3 @@ export function hasPermission(user, key, site = null) {
     return user.permissions?.[key] === true;
 }
 
-/**
- * React hook — returns true/false for the current logged-in user.
- * Usage: const canEdit = usePermission('canEdit', currentSite);
- */
-export function usePermission(key, site = null) {
-    const { user } = useAuth();
-    return hasPermission(user, key, site);
-}

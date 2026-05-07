@@ -22,7 +22,7 @@ export async function POST(request, { params }) {
     }
 
     const { uid } = await params;
-    const { password } = await request.json();
+    const { password, forcePasswordChange = true } = await request.json();
 
     if (!password || password.length < 6) {
         return Response.json({ error: 'Password must be at least 6 characters' }, { status: 400 });
@@ -34,9 +34,9 @@ export async function POST(request, { params }) {
             password: password
         });
 
-        // 2. Mark for forced change on next login in Firestore
+        // 2. Mark for forced change on next login in Firestore (if requested)
         await adminDb.collection('users').doc(uid).update({
-            forcePasswordChange: true
+            forcePasswordChange: forcePasswordChange
         });
 
         return Response.json({ success: true });
