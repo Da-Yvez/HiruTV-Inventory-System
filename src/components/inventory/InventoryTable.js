@@ -31,6 +31,26 @@ import DeviceForm from './DeviceForm';
 import LabelPrintModal from './LabelPrintModal';
 import * as XLSX from 'xlsx';
 
+const getDeviceIP = (device) => {
+    // Check standard network interfaces first (for PCs)
+    if (device.networkInterfaces && device.networkInterfaces.length > 0) {
+        const primaryIP = device.networkInterfaces[0].ipAddress;
+        if (primaryIP) return primaryIP;
+    }
+    
+    // Check custom fields for "IP Address" or "IP" (for Other Assets)
+    if (device.customFields && device.customFields.length > 0) {
+        const ipField = device.customFields.find(f => 
+            f.label?.toLowerCase() === 'ip address' || 
+            f.label?.toLowerCase() === 'ip' ||
+            f.label?.toLowerCase() === 'ip addr'
+        );
+        if (ipField?.value) return ipField.value;
+    }
+    
+    return null;
+};
+
 const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelectedDevice, initialSearch }) => {
     const { currentSite } = useSite();
     const { user } = useAuth();
@@ -145,7 +165,13 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
                     'Department': device.department,
                     'User': device.userName || 'Unassigned',
                     'Status': device.status?.toUpperCase(),
-                    'IP Addresses': device.networkInterfaces?.map(i => i.ipAddress).filter(Boolean).join(', ') || 'N/A',
+                    'IP Addresses': [
+                        ...(device.networkInterfaces?.map(i => i.ipAddress) || []),
+                        ...(device.customFields?.filter(f => 
+                            f.label?.toLowerCase() === 'ip address' || 
+                            f.label?.toLowerCase() === 'ip'
+                        ).map(f => f.value) || [])
+                    ].filter(Boolean).join(', ') || 'N/A',
                 };
 
                 if (!device.deviceType || device.deviceType === 'pc') {
@@ -283,6 +309,10 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
             (device.userName?.toLowerCase().includes(s)) ||
             // IP Addresses
             device.networkInterfaces?.some(iface => iface.ipAddress?.toLowerCase().includes(s)) ||
+            device.customFields?.some(f => 
+                (f.label?.toLowerCase() === 'ip address' || f.label?.toLowerCase() === 'ip') && 
+                f.value?.toLowerCase().includes(s)
+            ) ||
             // Monitor Serials
             device.monitors?.some(mon => mon.serial?.toLowerCase().includes(s)) ||
             // IO Device Serials
@@ -485,7 +515,7 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="flex flex-col">
-                                                <span className="text-sm font-mono font-bold text-[#00A3A8]">{device.networkInterfaces?.[0]?.ipAddress || '---'}</span>
+                                                <span className="text-sm font-mono font-bold text-[#00A3A8]">{getDeviceIP(device) || '---'}</span>
                                                 {device.networkInterfaces?.length > 1 && (
                                                     <span className="text-[10px] text-slate-400 font-bold">+{device.networkInterfaces.length - 1} more</span>
                                                 )}
