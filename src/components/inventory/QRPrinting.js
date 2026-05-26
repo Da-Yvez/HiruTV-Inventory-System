@@ -17,11 +17,15 @@ import {
     FileText,
     Grid,
     Layout,
-    ExternalLink
+    ExternalLink,
+    Download
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createPortal } from 'react-dom';
+import AssetLabel from './AssetLabel';
+
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 const QRPrinting = () => {
     const { currentSite } = useSite();
@@ -33,6 +37,9 @@ const QRPrinting = () => {
     const [selectedDevices, setSelectedDevices] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isPrinting, setIsPrinting] = useState(false);
+    const [isDownloading, setIsDownloading] = useState(false);
+    const [downloadProgress, setDownloadProgress] = useState('');
+    const [activeDownloadDevice, setActiveDownloadDevice] = useState(null);
 
     // Fetch unique departments from current site's inventory
     useEffect(() => {
@@ -92,6 +99,66 @@ const QRPrinting = () => {
         addLog(currentSite, user, 'QR Labels Printed', `Printed ${selectedDevices.length} label(s): ${printedDeviceIds}`);
     };
 
+    const handleDownload = async () => {
+        if (selectedDevices.length === 0) return;
+        setIsDownloading(true);
+        
+        try {
+            const html2canvas = (await import('html2canvas-pro')).default;
+            
+            for (let i = 0; i < selectedDevices.length; i++) {
+                const id = selectedDevices[i];
+                const device = devices.find(d => d.id === id);
+                if (!device) continue;
+                
+                setDownloadProgress(`Progress: ${i + 1}/${selectedDevices.length}`);
+                
+                // Set the active device to render its label offscreen
+                setActiveDownloadDevice(device);
+                
+                // Wait for React to render the DOM element and for QR SVG to settle
+                await delay(150);
+                
+                const element = document.getElementById('downloadable-label-container');
+                if (element) {
+                    // Capture canvas with 3x scale for crystal clear printing quality
+                    const canvas = await html2canvas(element, {
+                        scale: 3,
+                        useCORS: true,
+                        backgroundColor: '#ffffff',
+                        logging: false
+                    });
+                    
+                    const dataUrl = canvas.toDataURL('image/png');
+                    const link = document.createElement('a');
+                    link.href = dataUrl;
+                    link.download = `${device.pcNumber.replace(/[\/\\?%*:|"<>]/g, '_')}_Label.png`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                }
+                
+                // Wait a brief moment before proceeding to the next download to prevent browser throttling
+                await delay(200);
+            }
+            
+            // Log the QR download batch
+            const downloadedDeviceIds = selectedDevices
+                .map(id => filteredDevices.find(d => d.id === id)?.pcNumber)
+                .filter(Boolean)
+                .join(', ');
+            addLog(currentSite, user, 'QR Labels Downloaded', `Downloaded ${selectedDevices.length} PNG label(s): ${downloadedDeviceIds}`);
+            
+        } catch (error) {
+            console.error("Error downloading QR labels:", error);
+            alert("An error occurred during download.");
+        } finally {
+            setActiveDownloadDevice(null);
+            setIsDownloading(false);
+            setDownloadProgress('');
+        }
+    };
+
 
 
     return (
@@ -123,11 +190,24 @@ const QRPrinting = () => {
 
                     <button 
                         onClick={handlePrint}
-                        disabled={selectedDevices.length === 0}
-                        className="px-6 py-2 bg-[#003135] text-white rounded-xl text-sm font-bold flex items-center gap-2 hover:scale-105 transition-transform disabled:opacity-50 disabled:hover:scale-100 shadow-lg shadow-[#003135]/10"
+                        disabled={selectedDevices.length === 0 || isDownloading}
+                        className="px-5 py-2 bg-[#003135] text-white rounded-xl text-sm font-bold flex items-center gap-2 hover:scale-105 transition-transform disabled:opacity-50 disabled:hover:scale-100 shadow-lg shadow-[#003135]/10"
                     >
                         <Printer size={16} />
-                        Print Selected ({selectedDevices.length})
+                        Print ({selectedDevices.length})
+                    </button>
+
+                    <button 
+                        onClick={handleDownload}
+                        disabled={selectedDevices.length === 0 || isDownloading}
+                        className="px-5 py-2 bg-emerald-600 text-white rounded-xl text-sm font-bold flex items-center gap-2 hover:scale-105 transition-transform disabled:opacity-50 disabled:hover:scale-100 shadow-lg shadow-emerald-600/10"
+                    >
+                        {isDownloading ? (
+                            <Loader2 className="animate-spin" size={16} />
+                        ) : (
+                            <Download size={16} />
+                        )}
+                        {isDownloading ? downloadProgress : `Download PNGs (${selectedDevices.length})`}
                     </button>
                 </div>
             </div>
@@ -195,7 +275,14 @@ const QRPrinting = () => {
                 </div>
             )}
 
-
+            {/* Offscreen element for capturing single QR labels */}
+            {activeDownloadDevice && (
+                <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
+                    <div id="downloadable-label-container" className="bg-white">
+                        <AssetLabel device={activeDownloadDevice} />
+                    </div>
+                </div>
+            )}
 
         </div>
     );
