@@ -63,6 +63,7 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
     const [deviceToDelete, setDeviceToDelete] = useState(null);
     const [isLabelModalOpen, setIsLabelModalOpen] = useState(false);
     const [deviceForLabel, setDeviceForLabel] = useState(null);
+    const [statusFilter, setStatusFilter] = useState('all');
 
 
     useEffect(() => {
@@ -320,7 +321,16 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
 
         const matchesDept = selectedDepts.length === 0 || selectedDepts.includes(device.department);
 
-        return matchesSearch && matchesDept;
+        let matchesStatus = true;
+        if (statusFilter === 'active') {
+            matchesStatus = device.status === 'active';
+        } else if (statusFilter === 'in-store') {
+            matchesStatus = device.status === 'in-store';
+        } else if (statusFilter === 'failed') {
+            matchesStatus = ['failed', 'replaced'].includes(device.status);
+        }
+
+        return matchesSearch && matchesDept && matchesStatus;
     });
 
     const canAdd = hasPermission(user, 'canAdd', currentSite);
@@ -445,19 +455,93 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
             {/* Stats Row */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
                 {[
-                    { label: 'Inventory Size', value: devices.length, color: 'text-[#003135]', bg: 'bg-[#003135]/5', icon: Database },
-                    { label: 'Active Assets', value: devices.filter(d => d.status === 'active').length, color: 'text-emerald-600', bg: 'bg-emerald-50', icon: Activity },
-                    { label: 'Dept. Stores', value: devices.filter(d => d.status === 'in-store').length, color: 'text-indigo-600', bg: 'bg-indigo-50', icon: Archive },
-                    { label: 'Failed/Retired', value: devices.filter(d => ['failed', 'replaced'].includes(d.status)).length, color: 'text-rose-600', bg: 'bg-rose-50', icon: ShieldAlert },
-                ].map((stat, i) => (
-                    <div key={i} className="bg-white p-8 rounded-[40px] shadow-sm border border-slate-100 flex flex-col items-center group hover:shadow-lg transition-all duration-500">
-                        <div className={`w-12 h-12 ${stat.bg} rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
-                            <stat.icon className={`${stat.color}`} size={20} />
-                        </div>
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{stat.label}</p>
-                        <p className={`text-4xl font-black mt-2 tracking-tighter ${stat.color}`}>{stat.value}</p>
-                    </div>
-                ))}
+                    { 
+                        id: 'all', 
+                        label: 'Inventory Size', 
+                        value: devices.length, 
+                        color: 'text-[#003135]', 
+                        bg: 'bg-[#003135]/5', 
+                        icon: Database,
+                        activeColor: 'text-[#003135]',
+                        activeBg: 'bg-[#003135]/10',
+                        activeBorder: 'border-[#003135]',
+                        activeShadow: 'shadow-lg shadow-[#003135]/10 bg-[#003135]/5',
+                        badgeBg: 'bg-[#003135]'
+                    },
+                    { 
+                        id: 'active', 
+                        label: 'Active Assets', 
+                        value: devices.filter(d => d.status === 'active').length, 
+                        color: 'text-emerald-600', 
+                        bg: 'bg-emerald-50', 
+                        icon: Activity,
+                        activeColor: 'text-emerald-600',
+                        activeBg: 'bg-emerald-100',
+                        activeBorder: 'border-emerald-500',
+                        activeShadow: 'shadow-lg shadow-emerald-500/10 bg-emerald-50/50',
+                        badgeBg: 'bg-emerald-500'
+                    },
+                    { 
+                        id: 'in-store', 
+                        label: 'Dept. Stores', 
+                        value: devices.filter(d => d.status === 'in-store').length, 
+                        color: 'text-indigo-600', 
+                        bg: 'bg-indigo-50', 
+                        icon: Archive,
+                        activeColor: 'text-indigo-600',
+                        activeBg: 'bg-indigo-100',
+                        activeBorder: 'border-indigo-500',
+                        activeShadow: 'shadow-lg shadow-indigo-500/10 bg-indigo-50/50',
+                        badgeBg: 'bg-indigo-500'
+                    },
+                    { 
+                        id: 'failed', 
+                        label: 'Failed/Retired', 
+                        value: devices.filter(d => ['failed', 'replaced'].includes(d.status)).length, 
+                        color: 'text-rose-600', 
+                        bg: 'bg-rose-50', 
+                        icon: ShieldAlert,
+                        activeColor: 'text-rose-600',
+                        activeBg: 'bg-rose-100',
+                        activeBorder: 'border-rose-500',
+                        activeShadow: 'shadow-lg shadow-rose-500/10 bg-rose-50/50',
+                        badgeBg: 'bg-rose-500'
+                    },
+                ].map((stat) => {
+                    const isActive = statusFilter === stat.id;
+                    const isAnyActive = statusFilter !== 'all';
+                    
+                    return (
+                        <button
+                            key={stat.id}
+                            onClick={() => {
+                                if (stat.id === 'all') {
+                                    setStatusFilter('all');
+                                } else {
+                                    setStatusFilter(statusFilter === stat.id ? 'all' : stat.id);
+                                }
+                            }}
+                            className={`w-full text-center bg-white p-8 rounded-[40px] flex flex-col items-center group transition-all duration-300 relative border-2 
+                                ${isActive 
+                                    ? `${stat.activeBorder} ${stat.activeShadow} scale-[1.02]` 
+                                    : 'border-transparent shadow-sm hover:shadow-md hover:border-slate-100 hover:scale-[1.01]'
+                                }
+                                ${isAnyActive && !isActive ? 'opacity-70 hover:opacity-100' : 'opacity-100'}
+                            `}
+                        >
+                            {/* Active Indicator Badge */}
+                            {isActive && (
+                                <div className={`absolute top-4 right-6 w-2.5 h-2.5 rounded-full ${stat.badgeBg} animate-pulse`} />
+                            )}
+                            
+                            <div className={`w-12 h-12 ${isActive ? stat.activeBg : stat.bg} rounded-2xl flex items-center justify-center mb-4 transition-all group-hover:scale-110 duration-300`}>
+                                <stat.icon className={isActive ? stat.activeColor : stat.color} size={20} />
+                            </div>
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{stat.label}</p>
+                            <p className={`text-4xl font-black mt-2 tracking-tighter ${isActive ? stat.activeColor : stat.color}`}>{stat.value}</p>
+                        </button>
+                    );
+                })}
             </div>
 
 
