@@ -191,19 +191,81 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="relative min-h-screen w-full overflow-hidden bg-black flex items-center justify-center">
+    <div className="relative min-h-screen w-full overflow-hidden bg-black flex items-center justify-center lg:justify-between lg:px-20 xl:px-32">
       {/* ── Animated Shader Background ── */}
       <ShaderCanvas />
 
       {/* ── Dark overlay for readability ── */}
       <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" />
 
+      {/* ── Left Hero Side (Desktop Only) ── */}
+      <div className="hidden lg:flex flex-col max-w-xl z-10 text-left select-none pointer-events-none">
+        <motion.div
+          initial={{ opacity: 0, x: -50 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+          className="space-y-6"
+        >
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 backdrop-blur-md">
+            <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
+            <span className="text-[10px] font-bold text-orange-300 uppercase tracking-widest">Enterprise Inventory Portal</span>
+          </div>
+
+          <h2 className="text-5xl font-black text-white leading-tight tracking-tight">
+            Seamless Asset <br />
+            & Device Management
+          </h2>
+          
+          <p className="text-white/60 text-base font-medium leading-relaxed max-w-md">
+            Hiru TV's custom high-performance inventory tracking system. Keep track of hardware, licenses, and media gear with unified security and audit logging.
+          </p>
+
+          <div className="pt-4 flex items-center gap-6 text-white/30 text-xs font-bold uppercase tracking-wider">
+            <div>
+              <span className="block text-2xl font-extrabold text-orange-400">100%</span>
+              Real-time Sync
+            </div>
+            <div className="h-8 w-px bg-white/10" />
+            <div>
+              <span className="block text-2xl font-extrabold text-amber-400">QR-Ready</span>
+              Instant Scans
+            </div>
+            <div className="h-8 w-px bg-white/10" />
+            <div>
+              <span className="block text-2xl font-extrabold text-red-500">Secure</span>
+              Role-Based Access
+            </div>
+          </div>
+
+          {/* ── Yvexa Signature Tag ── */}
+          <div className="pt-6 flex items-center gap-3 select-none pointer-events-auto">
+            <span className="text-[10px] font-extrabold text-white/20 uppercase tracking-widest">Engineered & Powered by</span>
+            <a 
+              href="https://yvexa.dev" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="group relative flex items-center gap-2 px-3 py-1.5 rounded-xl bg-orange-500/5 hover:bg-orange-500/10 border border-white/5 hover:border-orange-500/20 transition-all duration-300 shadow-sm shadow-black/40"
+            >
+              {/* Subtle hover gradient backdrop */}
+              <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-orange-500/10 to-red-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              
+              <span className="relative text-xs font-black tracking-widest text-white/40 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-orange-400 group-hover:to-amber-300 transition-all duration-300">
+                YVEXA
+              </span>
+              <span className="relative w-1.5 h-1.5 rounded-full bg-white/20 group-hover:bg-orange-500 transition-colors duration-300">
+                <span className="absolute inset-0 rounded-full bg-orange-400 opacity-0 group-hover:opacity-100 group-hover:animate-ping" />
+              </span>
+            </a>
+          </div>
+        </motion.div>
+      </div>
+
       {/* ── Login Card ── */}
       <motion.div
         initial={{ opacity: 0, y: 32, scale: 0.96 }}
         animate={{ opacity: 1, y: 0,  scale: 1 }}
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-        className="relative z-10 w-full max-w-lg mx-4"
+        className="relative z-10 w-full max-w-lg mx-4 lg:mx-0 lg:max-w-md xl:max-w-lg"
       >
         {/* Glow ring */}
         <div className="absolute -inset-px rounded-3xl bg-gradient-to-br from-orange-500/60 via-amber-400/30 to-red-600/40 blur-sm" />
@@ -308,9 +370,6 @@ const LoginPage = () => {
           <div className="mt-8 text-center space-y-1">
             <p className="text-[10px] text-white/20 font-bold uppercase tracking-widest">
               Hiru TV IT Department
-            </p>
-            <p className="text-[10px] text-white/10 font-bold uppercase tracking-widest">
-              Powered by <a href="https://yvexa.dev" target="_blank" rel="noopener noreferrer" className="hover:text-orange-500/50 transition-colors">YVEXA</a>
             </p>
           </div>
         </div>
