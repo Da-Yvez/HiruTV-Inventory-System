@@ -640,7 +640,7 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-right">
-                                            <div className="flex items-center justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
+                                            <div className="flex items-center justify-end gap-1.5 opacity-85 hover:opacity-100 transition-opacity">
                                                 <button
                                                     onClick={() => handlePrintLabel(device)}
                                                     className="p-2.5 text-[#003135] bg-slate-50 hover:bg-[#003135] hover:text-white rounded-xl transition-all border border-slate-100" title="Print Asset Label"
