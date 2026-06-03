@@ -12,7 +12,6 @@ import {
     LogOut, 
     ChevronLeft, 
     ChevronRight,
-    Monitor,
     ShieldCheck,
     Shield,
     Download,
@@ -90,8 +89,8 @@ const DashboardLayout = ({ children, activeSection, onSectionChange, isSystemMod
             >
                 {/* Site Brand */}
                 <div className="h-20 flex items-center px-6 border-b border-[#D1DDDE] overflow-hidden">
-                    <div className="min-w-[40px] w-10 h-10 bg-[#003135] rounded-xl flex items-center justify-center text-white mr-4">
-                        <Monitor size={24} />
+                    <div className="min-w-[40px] w-10 h-10 bg-white border border-[#D1DDDE] rounded-xl flex items-center justify-center overflow-hidden mr-4 shadow-sm shadow-[#003135]/5 select-none">
+                        <img src="/logo.jpg" alt="Hiru TV Logo" className="w-full h-full object-cover" />
                     </div>
                     {isSidebarOpen && (
                         <motion.span
