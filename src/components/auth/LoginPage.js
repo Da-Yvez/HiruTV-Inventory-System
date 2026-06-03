@@ -184,7 +184,15 @@ const LoginPage = () => {
       } catch (_) { /* non-critical */ }
     } catch (err) {
       console.error(err);
-      setError('Invalid username or password. Please try again.');
+      if (err.code === 'auth/unauthorized-domain') {
+        setError(`This domain (${window.location.hostname}) is not authorized in Firebase. Please add it to the 'Authorized domains' list in your Firebase Console under Authentication > Settings.`);
+      } else if (err.code === 'auth/network-request-failed' || err.message?.includes('restriction') || err.message?.includes('blocked')) {
+        setError('Network request failed. If you restricted your API key in Google Cloud Console, make sure to add this custom domain to the allowed HTTP referrers.');
+      } else if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found') {
+        setError('Invalid username or password. Please try again.');
+      } else {
+        setError(err.message || 'An error occurred during sign-in. Please try again.');
+      }
     } finally {
       setIsLoading(false);
     }
