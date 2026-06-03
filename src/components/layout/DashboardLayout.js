@@ -16,7 +16,6 @@ import {
     ShieldCheck,
     Shield,
     Download,
-    FileSpreadsheet,
     Users,
     ArrowLeftRight,
     QrCode,
@@ -132,17 +131,7 @@ const DashboardLayout = ({ children, activeSection, onSectionChange, isSystemMod
                                         {isSidebarOpen && <span className="ml-2 font-semibold">Download App</span>}
                                     </a>
                                 </li>
-                                <li>
-                                    <a
-                                        href={process.env.NEXT_PUBLIC_NAME_LIST_URL || "#"}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="w-full flex items-center p-3 text-[#5A6C6D] hover:bg-slate-50 hover:text-[#003135] rounded-xl transition-all"
-                                    >
-                                        <span className="min-w-[40px] flex justify-center"><FileSpreadsheet size={20} /></span>
-                                        {isSidebarOpen && <span className="ml-2 font-semibold">Name List</span>}
-                                    </a>
-                                </li>
+
                             </ul>
                         </>
                     )}
