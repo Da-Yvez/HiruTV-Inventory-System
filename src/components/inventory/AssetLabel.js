@@ -4,9 +4,33 @@ import React from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useSite } from '@/context/SiteContext';
 
+// Module-level cache for the logo to avoid refetching on every mount
+let cachedLogoBase64 = null;
+
 const AssetLabel = ({ device }) => {
     const { currentSite } = useSite();
+    const [logoSrc, setLogoSrc] = React.useState(cachedLogoBase64 || "/logo.jpg");
     
+    React.useEffect(() => {
+        if (cachedLogoBase64) return;
+        
+        const loadLogo = async () => {
+            try {
+                const response = await fetch('/logo.jpg');
+                const blob = await response.blob();
+                const reader = new FileReader();
+                reader.readAsDataURL(blob);
+                reader.onloadend = () => {
+                    cachedLogoBase64 = reader.result;
+                    setLogoSrc(reader.result);
+                };
+            } catch (err) {
+                console.error("Failed to load logo as base64:", err);
+            }
+        };
+        loadLogo();
+    }, []);
+
     // Fallback if currentSite is not available
     const siteName = currentSite?.name || "Hiru TV";
     const siteFullName = currentSite?.fullName || "Hiru TV Inventory System";
@@ -38,7 +62,7 @@ const AssetLabel = ({ device }) => {
                         level="H"
                         includeMargin={false}
                         imageSettings={{
-                            src: "/logo.jpg",
+                            src: logoSrc,
                             x: undefined,
                             y: undefined,
                             height: 24,
