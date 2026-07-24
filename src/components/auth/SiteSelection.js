@@ -14,7 +14,7 @@ const SiteSelection = ({ onOpenSettings }) => {
     const { user } = useAuth();
 
     // Map site ID -> permission key
-    const sitePermKey = { wtc: 'canAccessWTC', hls: 'canAccessHLS' };
+    const sitePermKey = { wtc: 'canAccessWTC', hls: 'canAccessHLS', hlse: 'canAccessHLSE' };
 
     const container = {
         hidden: { opacity: 0 },

@@ -43,10 +43,15 @@ const ALL_PERMISSIONS = {
     hls_canAdd:             true,
     hls_canEdit:            true,
     hls_canDelete:          true,
+    canAccessHLSE:          true,
+    hlse_canAdd:            true,
+    hlse_canEdit:           true,
+    hlse_canDelete:         true,
     canViewLogs:            true,
     canManageDepartments:   true,
     manage_wtc:             true,
     manage_hls:             true,
+    manage_hlse:            true,
 };
 
 async function main() {

@@ -14,12 +14,18 @@ export const PERMISSIONS = [
     { key: 'hls_canAdd',            label: 'Life Studio: Add Items',        description: 'Can add devices in Life Studio' },
     { key: 'hls_canEdit',           label: 'Life Studio: Edit Items',       description: 'Can edit devices in Life Studio' },
     { key: 'hls_canDelete',         label: 'Life Studio: Delete Items',     description: 'Can delete devices in Life Studio' },
+    
+    { key: 'canAccessHLSE',          label: 'Life Studio Equipments: Access Site',      description: 'Can enter the Life Studio Equipments inventory' },
+    { key: 'hlse_canAdd',            label: 'Life Studio Equipments: Add Items',        description: 'Can add items in Life Studio Equipments' },
+    { key: 'hlse_canEdit',           label: 'Life Studio Equipments: Edit Items',       description: 'Can edit items in Life Studio Equipments' },
+    { key: 'hlse_canDelete',         label: 'Life Studio Equipments: Delete Items',     description: 'Can delete items in Life Studio Equipments' },
 
     { key: 'canViewLogs',           label: 'View Activity Logs',    description: 'Can view the activity log history' },
     { key: 'canManageDepartments',  label: 'Manage Departments',    description: 'Can add / edit / remove departments' },
 
     { key: 'manage_wtc',            label: 'Manage WTC Users',      description: 'Can manage users and permissions for WTC' },
     { key: 'manage_hls',            label: 'Manage Life Studio Users', description: 'Can manage users and permissions for Life Studio' },
+    { key: 'manage_hlse',           label: 'Manage Life Studio Equipments Users', description: 'Can manage users and permissions for Life Studio Equipments' },
 ];
 
 /**
@@ -34,10 +40,15 @@ export const DEFAULT_PERMISSIONS = {
     hls_canAdd:             false,
     hls_canEdit:            false,
     hls_canDelete:          false,
+    canAccessHLSE:          false,
+    hlse_canAdd:            false,
+    hlse_canEdit:           false,
+    hlse_canDelete:         false,
     canViewLogs:            false,
     canManageDepartments:   false,
     manage_wtc:             false,
     manage_hls:             false,
+    manage_hlse:            false,
 };
 
 /**

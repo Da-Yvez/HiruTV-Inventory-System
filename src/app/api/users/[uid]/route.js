@@ -73,6 +73,11 @@ export async function PATCH(request, { params }) {
                     finalPermissions[k] = targetData.permissions?.[k] ?? false;
                 });
             }
+            if (!caller.permissions?.manage_hlse) {
+                ['canAccessHLSE', 'hlse_canAdd', 'hlse_canEdit', 'hlse_canDelete', 'manage_hlse'].forEach(k => {
+                    finalPermissions[k] = targetData.permissions?.[k] ?? false;
+                });
+            }
             // Protect system perms
             ['canViewLogs', 'canManageDepartments'].forEach(k => {
                 finalPermissions[k] = targetData.permissions?.[k] ?? false;

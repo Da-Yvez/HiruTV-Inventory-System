@@ -24,7 +24,8 @@ import { motion } from 'framer-motion';
 const PublicAssetView = ({ device }) => {
     if (!device) return null;
 
-    const isPC = !device.deviceType || device.deviceType === 'pc';
+    const isHLSE = device.site === 'hlse';
+    const isPC = !isHLSE && (!device.deviceType || device.deviceType === 'pc');
 
     const specs = isPC ? [
         { label: 'CPU', value: device.cpu, icon: Cpu, color: 'text-blue-500', bg: 'bg-blue-50' },
@@ -100,7 +101,7 @@ const PublicAssetView = ({ device }) => {
                             
                             <div className="space-y-2">
                                 <p className="text-white/50 text-xs sm:text-sm font-bold tracking-[0.2em] uppercase ml-1">
-                                    {device.pcNumber}
+                                    {isHLSE ? `Barcode: ${device.pcNumber}` : device.pcNumber}
                                 </p>
                                 <h2 className="text-4xl sm:text-5xl md:text-7xl font-black tracking-tighter leading-none">
                                     {device.pcModel}
@@ -115,7 +116,9 @@ const PublicAssetView = ({ device }) => {
                                         <Hash size={28} className="text-white" />
                                     </div>
                                     <div className="min-w-0">
-                                        <p className="text-[10px] font-black text-white/50 uppercase tracking-[0.3em] leading-none mb-2">Primary Serial</p>
+                                        <p className="text-[10px] font-black text-white/50 uppercase tracking-[0.3em] leading-none mb-2">
+                                            {isHLSE ? 'Serial Number' : 'Primary Serial'}
+                                        </p>
                                         <div className="max-w-full overflow-x-auto">
                                             <p className="text-3xl sm:text-4xl font-mono font-black text-white tracking-tight leading-none whitespace-nowrap">
                                                 {device.pcSerial || 'N/A'}
@@ -132,91 +135,130 @@ const PublicAssetView = ({ device }) => {
                 <div className="p-6 sm:p-10 md:p-12 space-y-16 sm:space-y-20">
                     
                     {/* Grid: Specs or Custom Fields & Network */}
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-16">
-                        {/* Specifications/Custom Fields */}
-                        <div className="lg:col-span-2 space-y-8">
-                            <div className="flex items-center gap-3">
-                                <div className="w-2 h-6 bg-[#003135] rounded-full" />
-                                <h3 className="text-xl font-black text-[#003135] uppercase tracking-tight">
-                                    {isPC ? 'System Core' : 'Asset Specifications'}
-                                </h3>
-                            </div>
-                            
-                            {isPC ? (
-                                <div className="grid grid-cols-2 gap-6">
-                                    {specs.map((spec, i) => (
-                                        <div key={i} className="flex items-center gap-6 p-6 rounded-[32px] bg-slate-50 border border-slate-100 hover:border-[#003135]/20 hover:bg-white hover:shadow-xl transition-all duration-300 group">
-                                            <div className={`w-14 h-14 ${spec.bg} ${spec.color} rounded-[20px] flex items-center justify-center group-hover:scale-110 transition-transform`}>
-                                                <spec.icon size={28} />
-                                            </div>
-                                            <div>
-                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">{spec.label}</p>
-                                                <p className="text-lg font-black text-[#003135] leading-tight">
-                                                    {spec.value || 'N/A'}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    ))}
+                    {/* Grid: Specs or Custom Fields & Network */}
+                    {isHLSE ? (
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                            <div className="flex items-center gap-6 p-6 rounded-[32px] bg-slate-50 border border-slate-100 hover:border-[#003135]/20 hover:bg-white hover:shadow-xl transition-all duration-300 group">
+                                <div className="w-14 h-14 bg-blue-50 text-blue-500 rounded-[20px] flex items-center justify-center group-hover:scale-110 transition-transform">
+                                    <Building2 size={28} />
                                 </div>
-                            ) : (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                                    {device.customFields && device.customFields.length > 0 ? (
-                                        device.customFields.map((field, i) => {
-                                            const Icon = getCustomFieldIcon(field.label);
-                                            return (
-                                                <div key={i} className="flex items-center gap-6 p-6 rounded-[32px] bg-slate-50 border border-slate-100 hover:border-[#003135]/20 hover:bg-white hover:shadow-xl transition-all duration-300 group">
-                                                    <div className="w-14 h-14 bg-orange-50 text-orange-500 rounded-[20px] flex items-center justify-center group-hover:scale-110 transition-transform shrink-0">
-                                                        <Icon size={28} />
+                                <div>
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Brand</p>
+                                    <p className="text-lg font-black text-[#003135] leading-tight">
+                                        {device.brand || 'N/A'}
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-6 p-6 rounded-[32px] bg-slate-50 border border-slate-100 hover:border-[#003135]/20 hover:bg-white hover:shadow-xl transition-all duration-300 group">
+                                <div className="w-14 h-14 bg-purple-50 text-purple-500 rounded-[20px] flex items-center justify-center group-hover:scale-110 transition-transform">
+                                    <CircleDot size={28} />
+                                </div>
+                                <div>
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Category</p>
+                                    <p className="text-lg font-black text-[#003135] leading-tight">
+                                        {device.department || 'N/A'}
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-6 p-6 rounded-[32px] bg-slate-50 border border-slate-100 hover:border-[#003135]/20 hover:bg-white hover:shadow-xl transition-all duration-300 group">
+                                <div className="w-14 h-14 bg-amber-50 text-amber-500 rounded-[20px] flex items-center justify-center group-hover:scale-110 transition-transform">
+                                    <Hash size={28} />
+                                </div>
+                                <div>
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Quantity</p>
+                                    <p className="text-lg font-black text-[#003135] leading-tight">
+                                        {device.quantity ?? 1}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-16">
+                            {/* Specifications/Custom Fields */}
+                            <div className="lg:col-span-2 space-y-8">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-2 h-6 bg-[#003135] rounded-full" />
+                                    <h3 className="text-xl font-black text-[#003135] uppercase tracking-tight">
+                                        {isPC ? 'System Core' : 'Asset Specifications'}
+                                    </h3>
+                                </div>
+                                
+                                {isPC ? (
+                                    <div className="grid grid-cols-2 gap-6">
+                                        {specs.map((spec, i) => (
+                                            <div key={i} className="flex items-center gap-6 p-6 rounded-[32px] bg-slate-50 border border-slate-100 hover:border-[#003135]/20 hover:bg-white hover:shadow-xl transition-all duration-300 group">
+                                                <div className={`w-14 h-14 ${spec.bg} ${spec.color} rounded-[20px] flex items-center justify-center group-hover:scale-110 transition-transform`}>
+                                                    <spec.icon size={28} />
+                                                </div>
+                                                <div>
+                                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">{spec.label}</p>
+                                                    <p className="text-lg font-black text-[#003135] leading-tight">
+                                                        {spec.value || 'N/A'}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                        {device.customFields && device.customFields.length > 0 ? (
+                                            device.customFields.map((field, i) => {
+                                                const Icon = getCustomFieldIcon(field.label);
+                                                return (
+                                                    <div key={i} className="flex items-center gap-6 p-6 rounded-[32px] bg-slate-50 border border-slate-100 hover:border-[#003135]/20 hover:bg-white hover:shadow-xl transition-all duration-300 group">
+                                                        <div className="w-14 h-14 bg-orange-50 text-orange-500 rounded-[20px] flex items-center justify-center group-hover:scale-110 transition-transform shrink-0">
+                                                            <Icon size={28} />
+                                                        </div>
+                                                        <div className="min-w-0">
+                                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1 leading-none">{field.label}</p>
+                                                            <p className="text-lg font-black text-[#003135] leading-tight break-words">
+                                                                {field.value || 'N/A'}
+                                                            </p>
+                                                        </div>
                                                     </div>
-                                                    <div className="min-w-0">
-                                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1 leading-none">{field.label}</p>
-                                                        <p className="text-lg font-black text-[#003135] leading-tight break-words">
-                                                            {field.value || 'N/A'}
-                                                        </p>
+                                                );
+                                            })
+                                        ) : (
+                                            <div className="col-span-2 p-10 border-2 border-dashed border-slate-100 rounded-[32px] text-center">
+                                                <p className="text-slate-300 font-bold text-sm uppercase tracking-widest">No custom specification fields added</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Network Info */}
+                            {(isPC || hasNetwork) && (
+                                <div className="space-y-8">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-2 h-6 bg-emerald-500 rounded-full" />
+                                        <h3 className="text-xl font-black text-[#003135] uppercase tracking-tight">Network Info</h3>
+                                    </div>
+                                    <div className="space-y-4">
+                                        {device.networkInterfaces && device.networkInterfaces.length > 0 ? (
+                                            device.networkInterfaces.map((net, i) => (
+                                                <div key={i} className="p-6 bg-slate-900 rounded-[32px] text-white shadow-xl relative overflow-hidden group">
+                                                    <Network className="absolute -right-4 -bottom-4 text-white/5 group-hover:text-white/10 transition-colors" size={100} />
+                                                    <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] mb-2">{net.interfaceName || 'Interface'}</p>
+                                                    <p className="text-2xl font-mono font-black text-emerald-400 tracking-tight mb-1">{net.ipAddress || '---.---.---.---'}</p>
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+                                                        <span className="text-[10px] font-bold text-white/40 uppercase">
+                                                            {net.type ? `${net.type} connection` : 'Static IP Assigned'}
+                                                        </span>
                                                     </div>
                                                 </div>
-                                            );
-                                        })
-                                    ) : (
-                                        <div className="col-span-2 p-10 border-2 border-dashed border-slate-100 rounded-[32px] text-center">
-                                            <p className="text-slate-300 font-bold text-sm uppercase tracking-widest">No custom specification fields added</p>
-                                        </div>
-                                    )}
+                                            ))
+                                        ) : (
+                                            <div className="p-10 border-2 border-dashed border-slate-100 rounded-[32px] text-center bg-slate-950">
+                                                <p className="text-slate-500 font-bold text-sm uppercase tracking-widest">No interface configured</p>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             )}
                         </div>
-
-                        {/* Network Info */}
-                        {(isPC || hasNetwork) && (
-                            <div className="space-y-8">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-2 h-6 bg-emerald-500 rounded-full" />
-                                    <h3 className="text-xl font-black text-[#003135] uppercase tracking-tight">Network Info</h3>
-                                </div>
-                                <div className="space-y-4">
-                                    {device.networkInterfaces && device.networkInterfaces.length > 0 ? (
-                                        device.networkInterfaces.map((net, i) => (
-                                            <div key={i} className="p-6 bg-slate-900 rounded-[32px] text-white shadow-xl relative overflow-hidden group">
-                                                <Network className="absolute -right-4 -bottom-4 text-white/5 group-hover:text-white/10 transition-colors" size={100} />
-                                                <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] mb-2">{net.interfaceName || 'Interface'}</p>
-                                                <p className="text-2xl font-mono font-black text-emerald-400 tracking-tight mb-1">{net.ipAddress || '---.---.---.---'}</p>
-                                                <div className="flex items-center gap-2">
-                                                    <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-                                                    <span className="text-[10px] font-bold text-white/40 uppercase">
-                                                        {net.type ? `${net.type} connection` : 'Static IP Assigned'}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        ))
-                                    ) : (
-                                        <div className="p-10 border-2 border-dashed border-slate-100 rounded-[32px] text-center bg-slate-950">
-                                            <p className="text-slate-500 font-bold text-sm uppercase tracking-widest">No interface configured</p>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        )}
-                    </div>
+                    )}
 
                     {/* Monitors & Peripherals */}
                     {(isPC || (device.monitors?.length > 0 || device.ioDevices?.length > 0)) && (

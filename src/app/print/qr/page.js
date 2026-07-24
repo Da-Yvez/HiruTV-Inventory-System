@@ -123,17 +123,17 @@ const PrintQRContent = () => {
                             <div className="info-section">
                                 <div className="label-title-group">
                                     <p className="site-name">{site?.name}</p>
-                                    <h2 className="main-title">IT ASSET</h2>
+                                    <h2 className="main-title">{site?.id === 'hlse' ? 'EQUIPMENT' : 'IT ASSET'}</h2>
                                 </div>
 
                                 <div className="field-group">
-                                    <p className="field-label">Asset ID / PC Number</p>
+                                    <p className="field-label">{site?.id === 'hlse' ? 'Barcode' : 'Asset ID / PC Number'}</p>
                                     <p className="field-value">{device.pcNumber}</p>
                                 </div>
 
                                 <div className="row">
                                     <div className="field-group">
-                                        <p className="field-label">Department</p>
+                                        <p className="field-label">{site?.id === 'hlse' ? 'Category' : 'Department'}</p>
                                         <p className="field-value" style={{ fontSize: '10px' }}>{device.department}</p>
                                     </div>
                                     <div className="field-group">

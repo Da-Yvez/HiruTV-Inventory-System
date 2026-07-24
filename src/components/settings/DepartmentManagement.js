@@ -23,6 +23,7 @@ const DepartmentManagement = () => {
     const [message, setMessage] = useState(null);
     const [deptToDeleteModal, setDeptToDeleteModal] = useState(null);
 
+    const isHLSE = currentSite?.id === 'hlse';
     const departments = currentSite?.departments || [];
 
     const handleAddDept = (e) => {
@@ -30,7 +31,7 @@ const DepartmentManagement = () => {
         if (!newDept.trim()) return;
         
         if (departments.some(d => d.toLowerCase() === newDept.trim().toLowerCase())) {
-            showMessage('Department already exists', 'error');
+            showMessage(isHLSE ? 'Category already exists' : 'Department already exists', 'error');
             return;
         }
 
@@ -54,14 +55,18 @@ const DepartmentManagement = () => {
         setSaving(true);
         try {
             await updateSiteConfig({ departments: updatedDepts });
-            showMessage('Departments updated successfully', 'success');
+            showMessage(isHLSE ? 'Categories updated successfully' : 'Departments updated successfully', 'success');
             if (action === 'add') {
-                addLog(currentSite, user, 'Department Added', `Added department "${deptName}" to ${currentSite?.fullName}`);
+                const actionType = isHLSE ? 'Category Added' : 'Department Added';
+                const logText = isHLSE ? `Added category "${deptName}" to ${currentSite?.fullName}` : `Added department "${deptName}" to ${currentSite?.fullName}`;
+                addLog(currentSite, user, actionType, logText);
             } else if (action === 'delete') {
-                addLog(currentSite, user, 'Department Removed', `Removed department "${deptName}" from ${currentSite?.fullName}`);
+                const actionType = isHLSE ? 'Category Removed' : 'Department Removed';
+                const logText = isHLSE ? `Removed category "${deptName}" from ${currentSite?.fullName}` : `Removed department "${deptName}" from ${currentSite?.fullName}`;
+                addLog(currentSite, user, actionType, logText);
             }
         } catch (error) {
-            showMessage('Failed to update departments', 'error');
+            showMessage(isHLSE ? 'Failed to update categories' : 'Failed to update departments', 'error');
         } finally {
             setSaving(false);
         }
@@ -75,8 +80,12 @@ const DepartmentManagement = () => {
     return (
         <div className="max-w-4xl mx-auto py-8 px-4">
             <div className="mb-8">
-                <h1 className="text-3xl font-black text-[#003135] tracking-tight">Department Management</h1>
-                <p className="text-slate-500 font-medium">Manage the departments available for {currentSite?.fullName}</p>
+                <h1 className="text-3xl font-black text-[#003135] tracking-tight">
+                    {isHLSE ? 'Category Management' : 'Department Management'}
+                </h1>
+                <p className="text-slate-500 font-medium">
+                    {isHLSE ? `Manage the categories available for ${currentSite?.fullName}` : `Manage the departments available for ${currentSite?.fullName}`}
+                </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -87,16 +96,18 @@ const DepartmentManagement = () => {
                             <div className="w-8 h-8 bg-[#003135]/5 rounded-lg flex items-center justify-center text-[#003135]">
                                 <Plus size={18} />
                             </div>
-                            <h3 className="font-bold text-[#003135]">Add Department</h3>
+                            <h3 className="font-bold text-[#003135]">{isHLSE ? 'Add Category' : 'Add Department'}</h3>
                         </div>
 
                         <form onSubmit={handleAddDept} className="space-y-4">
                             <div className="space-y-1.5">
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Department Name</label>
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                                    {isHLSE ? 'Category Name' : 'Department Name'}
+                                </label>
                                 <input maxLength={100} 
                                     value={newDept}
                                     onChange={(e) => setNewDept(e.target.value)}
-                                    placeholder="e.g. Production"
+                                    placeholder={isHLSE ? "e.g. Cameras" : "e.g. Production"}
                                     className="w-full px-5 py-3 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:outline-none focus:border-[#003135] focus:bg-white transition-all font-bold text-[#003135]"
                                 />
                             </div>
@@ -134,7 +145,7 @@ const DepartmentManagement = () => {
                         <div className="p-6 bg-slate-50/50 border-b border-slate-100 flex items-center justify-between">
                             <div className="flex items-center gap-2">
                                 <LayoutGrid size={18} className="text-[#003135]" />
-                                <h3 className="font-bold text-[#003135]">Current Departments</h3>
+                                <h3 className="font-bold text-[#003135]">{isHLSE ? 'Current Categories' : 'Current Departments'}</h3>
                             </div>
                             <span className="bg-[#003135] text-white px-3 py-1 rounded-full text-[10px] font-black">
                                 {departments.length} TOTAL
@@ -144,8 +155,8 @@ const DepartmentManagement = () => {
                         <div className="p-2 grid grid-cols-1 gap-1">
                             {departments.length === 0 ? (
                                 <div className="py-20 text-center text-slate-400">
-                                    <p className="font-bold">No departments added yet</p>
-                                    <p className="text-xs">Add your first department using the form on the left</p>
+                                    <p className="font-bold">{isHLSE ? 'No categories added yet' : 'No departments added yet'}</p>
+                                    <p className="text-xs">{isHLSE ? 'Add your first category using the form on the left' : 'Add your first department using the form on the left'}</p>
                                 </div>
                             ) : (
                                 departments.map((dept, idx) => (
@@ -191,11 +202,13 @@ const DepartmentManagement = () => {
                                 <div className="w-16 h-16 bg-rose-50 text-rose-500 rounded-2xl flex items-center justify-center mb-6">
                                     <AlertTriangle size={32} />
                                 </div>
-                                <h3 className="text-2xl font-black text-[#003135] mb-2">Delete Department?</h3>
+                                <h3 className="text-2xl font-black text-[#003135] mb-2">
+                                    {isHLSE ? 'Delete Category?' : 'Delete Department?'}
+                                </h3>
                                 <p className="text-slate-500 font-medium mb-8">
-                                    Are you sure you want to remove the 
-                                    <span className="font-bold text-[#003135]"> "{deptToDeleteModal}" </span> 
-                                    department? 
+                                    {isHLSE 
+                                        ? `Are you sure you want to remove the "${deptToDeleteModal}" category?`
+                                        : `Are you sure you want to remove the "${deptToDeleteModal}" department?`}
                                 </p>
                                 
                                 <div className="flex gap-4 w-full">

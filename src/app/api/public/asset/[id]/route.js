@@ -38,7 +38,7 @@ export async function GET(request, { params }) {
         const searchTerms = Array.from(variations);
         console.log(`[API] Searching with terms: ${searchTerms.join(', ')}`);
         
-        const collections = ['devices_hls', 'devices_wtc'];
+        const collections = ['devices_hls', 'devices_wtc', 'devices_hlse'];
         let deviceData = null;
 
         for (const coll of collections) {
@@ -57,7 +57,10 @@ export async function GET(request, { params }) {
 
             if (!snap.empty) {
                 console.log(`[API] Found device in ${coll}`);
-                deviceData = snap.docs[0].data();
+                deviceData = {
+                    ...snap.docs[0].data(),
+                    site: coll.replace('devices_', '')
+                };
                 break;
             }
         }

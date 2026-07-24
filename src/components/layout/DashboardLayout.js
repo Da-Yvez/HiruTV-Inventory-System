@@ -33,15 +33,15 @@ const DashboardLayout = ({ children, activeSection, onSectionChange, isSystemMod
         { id: 'qrSecurity', label: 'QR Security', icon: <QrCode size={20} />, show: user?.isSuperAdmin === true },
         { id: 'systemLogs', label: 'System Logs', icon: <History size={20} />, show: user?.isAdmin === true },
     ].filter(item => item.show) : [
-        { id: 'inventory',  label: 'Device Inventory',  icon: <LayoutDashboard size={20} />, show: hasPermission(user, 'canAccessWTC') || hasPermission(user, 'canAccessHLS') },
-        { id: 'addDevice',  label: 'Add New Device',    icon: <PlusCircle size={20} />,      show: hasPermission(user, 'wtc_canAdd') || hasPermission(user, 'hls_canAdd') },
-        { id: 'qrPrint',    label: 'QR Batch Print',    icon: <Printer size={20} />,         show: hasPermission(user, 'canAccessWTC') || hasPermission(user, 'canAccessHLS') },
+        { id: 'inventory',  label: currentSite?.id === 'hlse' ? 'Item Inventory' : 'Device Inventory',  icon: <LayoutDashboard size={20} />, show: hasPermission(user, 'canAccessWTC') || hasPermission(user, 'canAccessHLS') || hasPermission(user, 'canAccessHLSE') },
+        { id: 'addDevice',  label: currentSite?.id === 'hlse' ? 'Add New Item' : 'Add New Device',    icon: <PlusCircle size={20} />,      show: hasPermission(user, 'wtc_canAdd') || hasPermission(user, 'hls_canAdd') || hasPermission(user, 'hlse_canAdd') },
+        { id: 'qrPrint',    label: 'QR Batch Print',    icon: <Printer size={20} />,         show: hasPermission(user, 'canAccessWTC') || hasPermission(user, 'canAccessHLS') || hasPermission(user, 'canAccessHLSE') },
         { id: 'logs',       label: 'Activity Logs',     icon: <History size={20} />,          show: hasPermission(user, 'canViewLogs') },
     ].filter(item => item.show);
 
     // Settings nav — gated by permission
     const settingsMenuItems = isSystemMode ? [] : [
-        { id: 'departments', label: 'Departments', icon: <Settings size={20} />, show: hasPermission(user, 'canManageDepartments') },
+        { id: 'departments', label: currentSite?.id === 'hlse' ? 'Categories' : 'Departments', icon: <Settings size={20} />, show: hasPermission(user, 'canManageDepartments') },
     ].filter(item => item.show);
 
     const NavItem = ({ item }) => (

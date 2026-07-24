@@ -54,7 +54,9 @@ export default function ScanPage() {
     const hasSitePermission = (device) => {
         if (!user || !device) return false;
         // Map site IDs to permission keys
-        const siteKey = device.site?.toLowerCase() === 'wtc' ? 'canAccessWTC' : 'canAccessHLS';
+        let siteKey = 'canAccessWTC';
+        if (device.site?.toLowerCase() === 'hls') siteKey = 'canAccessHLS';
+        else if (device.site?.toLowerCase() === 'hlse') siteKey = 'canAccessHLSE';
         return hasPermission(user, siteKey);
     };
 

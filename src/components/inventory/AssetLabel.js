@@ -34,6 +34,7 @@ const AssetLabel = ({ device }) => {
     // Fallback if currentSite is not available
     const siteName = currentSite?.name || "Hiru TV";
     const siteFullName = currentSite?.fullName || "Hiru TV Inventory System";
+    const isHLSE = currentSite?.id === 'hlse';
     
     // Generate the scanning URL
     // Use the secure random qrKey instead of the predictable pcNumber
@@ -78,12 +79,12 @@ const AssetLabel = ({ device }) => {
             <div className="flex-1 relative z-10">
                 <div className="mb-4">
                     <p className="text-[10px] font-black text-[#003135] uppercase tracking-[0.2em] opacity-60">{siteName}</p>
-                    <h2 className="text-xl font-black text-[#003135] leading-none mt-1">IT ASSET</h2>
+                    <h2 className="text-xl font-black text-[#003135] leading-none mt-1">{isHLSE ? 'EQUIPMENT' : 'IT ASSET'}</h2>
                 </div>
 
                 <div className="space-y-3">
                     <div>
-                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Asset ID / PC Number</p>
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{isHLSE ? 'Barcode' : 'Asset ID / PC Number'}</p>
                         <p className="text-lg font-black text-[#003135] leading-tight break-all">
                             {device.pcNumber}
                         </p>
@@ -91,7 +92,7 @@ const AssetLabel = ({ device }) => {
                     
                     <div className="flex gap-4">
                         <div>
-                            <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Department</p>
+                            <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{isHLSE ? 'Category' : 'Department'}</p>
                             <p className="text-[11px] font-bold text-slate-600 uppercase">{device.department}</p>
                         </div>
                         <div>

@@ -31,6 +31,18 @@ export const siteConfig = {
         firebaseCollection: "devices_hls",
         logsCollection: "activityLogs_hls",
         repairCollection: "repairHistory_hls"
+    },
+    hlse: {
+        id: 'hlse',
+        name: "Life Studio Equipments",
+        fullName: "Hiru Life Studio Equipments",
+        icon: "Cpu",
+        technicians: ["Navendra"],
+        departments: ["Camera", "Tripod", "Mic", "Lighting", "Audio Mixer", "Lenses", "Cables", "Adapters", "Monitors", "Batteries"],
+        networkDiagram: "",
+        firebaseCollection: "devices_hlse",
+        logsCollection: "activityLogs_hlse",
+        repairCollection: "repairHistory_hlse"
     }
 };
 

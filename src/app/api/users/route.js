@@ -98,6 +98,15 @@ export async function POST(request) {
             delete restrictedPerms.hls_canDelete;
             delete restrictedPerms.manage_hls;
         }
+        
+        // If they don't have manage_hlse, strip HLSE perms
+        if (!caller.permissions?.manage_hlse) {
+            delete restrictedPerms.canAccessHLSE;
+            delete restrictedPerms.hlse_canAdd;
+            delete restrictedPerms.hlse_canEdit;
+            delete restrictedPerms.hlse_canDelete;
+            delete restrictedPerms.manage_hlse;
+        }
 
         // Admins cannot grant system-wide perms unless they have them? 
         // Actually, let's just say they can't grant system-wide perms at all to be safe.

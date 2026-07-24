@@ -240,7 +240,7 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
             );
             const querySnapshot = await getDocs(q);
 
-            // If we found a document with this PC Number
+            // If we found a document with this PC Number (or Barcode)
             if (!querySnapshot.empty) {
                 const duplicateDoc = querySnapshot.docs[0];
 
@@ -249,8 +249,25 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
                 const isMigratingToCleanId = selectedDevice && duplicateDoc.id === sanitizedId;
 
                 if (!isMigratingToCleanId && (!selectedDevice || duplicateDoc.id !== selectedDevice.id)) {
-                    alert(`Error: A device with PC Number "${formData.pcNumber}" already exists in ${currentSite.name}.`);
+                    const identifierLabel = currentSite.id === 'hlse' ? 'Barcode' : 'PC Number';
+                    alert(`Error: A device with ${identifierLabel} "${formData.pcNumber}" already exists in ${currentSite.name}.`);
                     return;
+                }
+            }
+
+            // 2. Perform a check for uniqueness of Serial Number (pcSerial) if site is hlse
+            if (currentSite.id === 'hlse' && formData.pcSerial) {
+                const qSerial = query(
+                    collection(db, currentSite.firebaseCollection),
+                    where('pcSerial', '==', formData.pcSerial.trim())
+                );
+                const serialSnapshot = await getDocs(qSerial);
+                if (!serialSnapshot.empty) {
+                    const duplicateDoc = serialSnapshot.docs[0];
+                    if (!selectedDevice || duplicateDoc.id !== selectedDevice.id) {
+                        alert(`Error: A device with Serial Number "${formData.pcSerial}" already exists in ${currentSite.name}.`);
+                        return;
+                    }
                 }
             }
 
@@ -287,9 +304,13 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
             }
 
             if (selectedDevice) {
-                await addLog(currentSite, user, 'Device Edited', `Updated device ${formData.pcNumber}`);
+                const actionText = currentSite.id === 'hlse' ? 'Item Edited' : 'Device Edited';
+                const logText = currentSite.id === 'hlse' ? `Updated item ${formData.pcNumber}` : `Updated device ${formData.pcNumber}`;
+                await addLog(currentSite, user, actionText, logText);
             } else {
-                await addLog(currentSite, user, 'Device Added', `Added new device ${formData.pcNumber} (${formData.pcModel})`);
+                const actionText = currentSite.id === 'hlse' ? 'Item Added' : 'Device Added';
+                const logText = currentSite.id === 'hlse' ? `Added new item ${formData.pcNumber} (${formData.pcModel})` : `Added new device ${formData.pcNumber} (${formData.pcModel})`;
+                await addLog(currentSite, user, actionText, logText);
             }
 
             setIsFormOpen(false);
@@ -308,6 +329,7 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
             (device.pcModel?.toLowerCase().includes(s)) ||
             (device.pcSerial?.toLowerCase().includes(s)) ||
             (device.userName?.toLowerCase().includes(s)) ||
+            (device.brand?.toLowerCase().includes(s)) ||
             // IP Addresses
             device.networkInterfaces?.some(iface => iface.ipAddress?.toLowerCase().includes(s)) ||
             device.customFields?.some(f => 
@@ -358,7 +380,7 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
                         <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-[#003135] transition-colors" size={20} />
                         <input
                             type="text"
-                            placeholder="Search assets, models, or users..."
+                            placeholder={currentSite?.id === 'hlse' ? "Search items, models, or brands..." : "Search assets, models, or users..."}
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="w-full pl-14 pr-6 py-4 bg-slate-50 border-2 border-transparent rounded-[24px] focus:outline-none focus:border-[#003135] focus:bg-white transition-all font-medium text-[#003135]"
@@ -370,7 +392,7 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
                             onClick={() => setIsDeptFilterOpen(!isDeptFilterOpen)}
                             className="w-full pl-14 pr-10 py-4 bg-slate-50 border-2 border-transparent rounded-[24px] focus:outline-none focus:border-[#003135] focus:bg-white transition-all font-bold text-[#003135] text-left overflow-hidden whitespace-nowrap"
                         >
-                            {selectedDepts.length === 0 ? 'All Departments' : `${selectedDepts.length} Selected`}
+                            {selectedDepts.length === 0 ? (currentSite?.id === 'hlse' ? 'All Categories' : 'All Departments') : `${selectedDepts.length} Selected`}
                         </button>
                         <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-300">
                             <MoreHorizontal size={18} />
@@ -391,7 +413,7 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
                                         className="absolute left-0 right-0 top-full mt-2 bg-white border border-slate-100 rounded-[32px] shadow-2xl z-40 overflow-hidden"
                                     >
                                         <div className="p-4 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
-                                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Select Departments</span>
+                                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{currentSite?.id === 'hlse' ? 'Select Categories' : 'Select Departments'}</span>
                                             {selectedDepts.length > 0 && (
                                                 <button
                                                     onClick={() => setSelectedDepts([])}
@@ -435,12 +457,12 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
                 <div className="flex items-center gap-4">
                     {canAdd && (
                         <button
-                            onClick={() => { setSelectedDevice(null); setIsViewMode(false); setIsFormOpen(true); }}
-                            className="flex items-center gap-3 px-8 py-4 bg-[#003135] text-white rounded-[24px] font-black tracking-wide hover:bg-[#004145] transition-all shadow-xl shadow-[#003135]/20 hover:scale-[1.02] active:scale-[0.98]"
-                        >
-                            <Plus size={22} strokeWidth={3} />
-                            ADD DEVICE
-                        </button>
+                                onClick={() => { setSelectedDevice(null); setIsViewMode(false); setIsFormOpen(true); }}
+                                className="flex items-center gap-3 px-8 py-4 bg-[#003135] text-white rounded-[24px] font-black tracking-wide hover:bg-[#004145] transition-all shadow-xl shadow-[#003135]/20 hover:scale-[1.02] active:scale-[0.98]"
+                            >
+                                <Plus size={22} strokeWidth={3} />
+                                {currentSite?.id === 'hlse' ? 'ADD ITEM' : 'ADD DEVICE'}
+                            </button>
                     )}
                     <button
                         onClick={handleExport}
@@ -457,7 +479,7 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
                 {[
                     { 
                         id: 'all', 
-                        label: 'Inventory Size', 
+                        label: currentSite?.id === 'hlse' ? 'Total Items' : 'Inventory Size', 
                         value: devices.length, 
                         color: 'text-[#003135]', 
                         bg: 'bg-[#003135]/5', 
@@ -470,7 +492,7 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
                     },
                     { 
                         id: 'active', 
-                        label: 'Active Assets', 
+                        label: currentSite?.id === 'hlse' ? 'Active Items' : 'Active Assets', 
                         value: devices.filter(d => d.status === 'active').length, 
                         color: 'text-emerald-600', 
                         bg: 'bg-emerald-50', 
@@ -483,7 +505,7 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
                     },
                     { 
                         id: 'in-store', 
-                        label: 'Dept. Stores', 
+                        label: currentSite?.id === 'hlse' ? 'Category Stores' : 'Dept. Stores', 
                         value: devices.filter(d => d.status === 'in-store').length, 
                         color: 'text-indigo-600', 
                         bg: 'bg-indigo-50', 
@@ -550,18 +572,31 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>
-                            <tr className="bg-slate-50 border-b border-slate-100">
-                                {/* Tally column hidden per user request */}
-                                {/* {currentSite.name === 'Life Studio' && <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest text-center">Tally</th>} */}
-                                <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">PC Number</th>
-                                <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">PC Model</th>
-                                <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">IP ADDR</th>
-                                <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">Department</th>
-                                <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">User</th>
-                                <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">Added By</th>
-                                <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">Status</th>
-                                <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
-                            </tr>
+                            {currentSite?.id === 'hlse' ? (
+                                <tr className="bg-slate-50 border-b border-slate-100">
+                                    <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">Barcode</th>
+                                    <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">Serial Number</th>
+                                    <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">Brand</th>
+                                    <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">Model</th>
+                                    <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">Category</th>
+                                    <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">Quantity</th>
+                                    <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">Status</th>
+                                    <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
+                                </tr>
+                            ) : (
+                                <tr className="bg-slate-50 border-b border-slate-100">
+                                    {/* Tally column hidden per user request */}
+                                    {/* {currentSite.name === 'Life Studio' && <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest text-center">Tally</th>} */}
+                                    <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">PC Number</th>
+                                    <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">PC Model</th>
+                                    <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">IP ADDR</th>
+                                    <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">Department</th>
+                                    <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">User</th>
+                                    <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">Added By</th>
+                                    <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">Status</th>
+                                    <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
+                                </tr>
+                            )}
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                             <AnimatePresence>
@@ -574,56 +609,76 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
                                         exit={{ opacity: 0 }}
                                         className="hover:bg-slate-50/80 transition-colors group"
                                     >
-                                        {/* Tally column hidden per user request */}
-                                        {/* {currentSite.name === 'Life Studio' && (
-                                            <td className="px-6 py-4 text-center">
-                                                <button 
-                                                    onClick={() => toggleTally(device.id, device.isTallied)}
-                                                    className={`p-2 rounded-lg transition-colors ${device.isTallied ? 'text-emerald-500 bg-emerald-50' : 'text-slate-300 hover:text-slate-400'}`}
-                                                >
-                                                    {device.isTallied ? <CheckSquare size={24} /> : <Square size={24} />}
-                                                </button>
-                                            </td>
-                                        )} */}
-
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 bg-[#003135]/5 rounded-xl flex items-center justify-center text-[#003135] font-black text-sm">
-                                                    {device.pcNumber?.slice(-2)}
-                                                </div>
-                                                <span className="text-base font-bold text-[#003135]">{device.pcNumber}</span>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <span className="text-sm text-slate-600 font-semibold">{device.pcModel}</span>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex flex-col">
-                                                <span className="text-sm font-mono font-bold text-[#00A3A8]">{getDeviceIP(device) || '---'}</span>
-                                                {device.networkInterfaces?.length > 1 && (
-                                                    <span className="text-[10px] text-slate-400 font-bold">+{device.networkInterfaces.length - 1} more</span>
-                                                )}
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <span className="inline-flex px-3 py-1 bg-slate-100 text-[#003135] rounded-lg text-[10px] font-black uppercase tracking-wider border border-slate-200">
-                                                {device.department}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-2 h-2 rounded-full bg-[#003135]/20" />
-                                                <span className="text-sm font-bold text-slate-700">{device.userName || 'Unassigned'}</span>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex flex-col">
-                                                <span className="text-sm font-bold text-slate-500">{device.createdBy || 'System'}</span>
-                                                <span className="text-[10px] text-slate-400 font-medium">
-                                                    {device.createdAt ? new Date(device.createdAt.seconds * 1000).toLocaleDateString() : 'N/A'}
-                                                </span>
-                                            </div>
-                                        </td>
+                                        {currentSite?.id === 'hlse' ? (
+                                            <>
+                                                <td className="px-6 py-4">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-10 h-10 bg-[#003135]/5 rounded-xl flex items-center justify-center text-[#003135] font-black text-sm">
+                                                            {device.pcNumber?.slice(-2)}
+                                                        </div>
+                                                        <span className="text-base font-bold text-[#003135]">{device.pcNumber}</span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <span className="text-sm font-mono font-bold text-slate-700">{device.pcSerial || 'N/A'}</span>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <span className="text-sm text-[#00A3A8] font-bold">{device.brand || '---'}</span>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <span className="text-sm text-slate-600 font-semibold">{device.pcModel}</span>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <span className="inline-flex px-3 py-1 bg-slate-100 text-[#003135] rounded-lg text-[10px] font-black uppercase tracking-wider border border-slate-200">
+                                                        {device.department}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <span className="text-sm font-bold text-slate-700">{device.quantity ?? 1}</span>
+                                                </td>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <td className="px-6 py-4">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-10 h-10 bg-[#003135]/5 rounded-xl flex items-center justify-center text-[#003135] font-black text-sm">
+                                                            {device.pcNumber?.slice(-2)}
+                                                        </div>
+                                                        <span className="text-base font-bold text-[#003135]">{device.pcNumber}</span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <span className="text-sm text-slate-600 font-semibold">{device.pcModel}</span>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <div className="flex flex-col">
+                                                        <span className="text-sm font-mono font-bold text-[#00A3A8]">{getDeviceIP(device) || '---'}</span>
+                                                        {device.networkInterfaces?.length > 1 && (
+                                                            <span className="text-[10px] text-slate-400 font-bold">+{device.networkInterfaces.length - 1} more</span>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <span className="inline-flex px-3 py-1 bg-slate-100 text-[#003135] rounded-lg text-[10px] font-black uppercase tracking-wider border border-slate-200">
+                                                        {device.department}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-2 h-2 rounded-full bg-[#003135]/20" />
+                                                        <span className="text-sm font-bold text-slate-700">{device.userName || 'Unassigned'}</span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <div className="flex flex-col">
+                                                        <span className="text-sm font-bold text-slate-500">{device.createdBy || 'System'}</span>
+                                                        <span className="text-[10px] text-slate-400 font-medium">
+                                                            {device.createdAt ? new Date(device.createdAt.seconds * 1000).toLocaleDateString() : 'N/A'}
+                                                        </span>
+                                                    </div>
+                                                </td>
+                                            </>
+                                        )}
                                         <td className="px-6 py-4">
                                             <span className={`
                                                  inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border
@@ -643,7 +698,7 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
                                             <div className="flex items-center justify-end gap-1.5 opacity-85 hover:opacity-100 transition-opacity">
                                                 <button
                                                     onClick={() => handlePrintLabel(device)}
-                                                    className="p-2.5 text-[#003135] bg-slate-50 hover:bg-[#003135] hover:text-white rounded-xl transition-all border border-slate-100" title="Print Asset Label"
+                                                    className="p-2.5 text-[#003135] bg-slate-50 hover:bg-[#003135] hover:text-white rounded-xl transition-all border border-slate-100" title={currentSite?.id === 'hlse' ? "Print Item Label" : "Print Asset Label"}
                                                 >
                                                     <QrCode size={16} />
                                                 </button>
@@ -656,7 +711,7 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
                                                 {canEdit && (
                                                     <button
                                                         onClick={() => handleEdit(device)}
-                                                        className="p-2.5 text-[#003135] bg-slate-50 hover:bg-[#003135] hover:text-white rounded-xl transition-all border border-slate-100" title="Edit Device"
+                                                        className="p-2.5 text-[#003135] bg-slate-50 hover:bg-[#003135] hover:text-white rounded-xl transition-all border border-slate-100" title={currentSite?.id === 'hlse' ? "Edit Item" : "Edit Device"}
                                                     >
                                                         <Edit size={16} />
                                                     </button>
@@ -664,7 +719,7 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
                                                 {canDelete && (
                                                     <button
                                                         onClick={() => handleDelete(device)}
-                                                        className="p-2.5 text-rose-600 bg-slate-50 hover:bg-rose-600 hover:text-white rounded-xl transition-all border border-slate-100" title="Delete Device"
+                                                        className="p-2.5 text-rose-600 bg-slate-50 hover:bg-rose-600 hover:text-white rounded-xl transition-all border border-slate-100" title={currentSite?.id === 'hlse' ? "Delete Item" : "Delete Device"}
                                                     >
                                                         <Trash2 size={16} />
                                                     </button>
@@ -681,7 +736,7 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
                 {filteredDevices.length === 0 && (
                     <div className="py-20 text-center text-slate-400">
                         <div className="mb-4 flex justify-center opacity-20"><Search size={60} /></div>
-                        <p className="text-xl font-bold">No devices found</p>
+                        <p className="text-xl font-bold">{currentSite?.id === 'hlse' ? 'No items found' : 'No devices found'}</p>
                         <p className="text-sm">Try adjusting your search or filters</p>
                     </div>
                 )}
@@ -720,7 +775,7 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
                                 <div className="w-16 h-16 bg-rose-50 text-rose-500 rounded-2xl flex items-center justify-center mb-6">
                                     <AlertTriangle size={32} />
                                 </div>
-                                <h3 className="text-2xl font-black text-[#003135] mb-2">Delete Device?</h3>
+                                <h3 className="text-2xl font-black text-[#003135] mb-2">{currentSite?.id === 'hlse' ? 'Delete Item?' : 'Delete Device?'}</h3>
                                 <p className="text-slate-500 font-medium mb-8">
                                     Are you sure you want to permanently delete
                                     <span className="font-bold text-[#003135]"> {deviceToDelete.pcNumber} </span>?

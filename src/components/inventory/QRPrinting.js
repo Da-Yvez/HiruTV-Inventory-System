@@ -183,7 +183,7 @@ const QRPrinting = () => {
                             className="bg-transparent text-xs font-bold text-[#003135] focus:outline-none min-w-[120px]"
                         >
                             {departments.map(d => (
-                                <option key={d} value={d}>{d}</option>
+                                <option key={d} value={d}>{d === 'All' ? (currentSite?.id === 'hlse' ? 'All Categories' : 'All Departments') : d}</option>
                             ))}
                         </select>
                     </div>
@@ -260,7 +260,12 @@ const QRPrinting = () => {
                                         </div>
                                     </div>
                                     <h4 className="text-sm font-black text-[#003135] leading-tight mb-1">{device.pcNumber}</h4>
-                                    <p className="text-[10px] text-slate-400 font-bold truncate">{device.user}</p>
+                                    <p className="text-[10px] text-slate-400 font-bold truncate">
+                                        {currentSite?.id === 'hlse' 
+                                            ? (device.brand ? `${device.brand} ${device.pcModel || ''}`.trim() : device.pcModel)
+                                            : device.user
+                                        }
+                                    </p>
                                 </motion.div>
                             );
                         })}
@@ -269,7 +274,11 @@ const QRPrinting = () => {
                     {filteredDevices.length === 0 && (
                         <div className="flex flex-col items-center justify-center py-20 text-slate-400">
                             <AlertCircle size={40} className="mb-4 opacity-20" />
-                            <p className="font-bold">No devices found in this department.</p>
+                            <p className="font-bold">
+                                {currentSite?.id === 'hlse' 
+                                    ? 'No items found in this category.' 
+                                    : 'No devices found in this department.'}
+                            </p>
                         </div>
                     )}
                 </div>

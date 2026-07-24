@@ -71,6 +71,9 @@ export default function UserFormModal({ mode, user, onClose, onSuccess }) {
         if (perm.key.startsWith('hls_') || perm.key === 'canAccessHLS' || perm.key === 'manage_hls') {
             return currentUser.permissions?.manage_hls === true;
         }
+        if (perm.key.startsWith('hlse_') || perm.key === 'canAccessHLSE' || perm.key === 'manage_hlse') {
+            return currentUser.permissions?.manage_hlse === true;
+        }
         
         // System permissions are Super Admin only in the UI for creation
         return false;
@@ -220,7 +223,8 @@ export default function UserFormModal({ mode, user, onClose, onSuccess }) {
                                             setPermissions(prev => ({ 
                                                 ...prev, 
                                                 manage_wtc: false, 
-                                                manage_hls: false 
+                                                manage_hls: false,
+                                                manage_hlse: false
                                             }));
                                         }
                                     }}
@@ -257,6 +261,11 @@ export default function UserFormModal({ mode, user, onClose, onSuccess }) {
                                                                 updated.hls_canAdd = true;
                                                                 updated.hls_canEdit = true;
                                                                 updated.hls_canDelete = true;
+                                                            } else if (perm.key === 'manage_hlse') {
+                                                                updated.canAccessHLSE = true;
+                                                                updated.hlse_canAdd = true;
+                                                                updated.hlse_canEdit = true;
+                                                                updated.hlse_canDelete = true;
                                                             }
                                                         }
                                                         return updated;
@@ -286,6 +295,7 @@ export default function UserFormModal({ mode, user, onClose, onSuccess }) {
                                     let categoryHeader = null;
                                     if (perm.key === 'canAccessWTC') categoryHeader = "WTC Site Permissions";
                                     else if (perm.key === 'canAccessHLS') categoryHeader = "Life Studio Site Permissions";
+                                    else if (perm.key === 'canAccessHLSE') categoryHeader = "Life Studio Equipments Site Permissions";
                                     else if (perm.key === 'canViewLogs') categoryHeader = "System Permissions";
 
                                     return (
