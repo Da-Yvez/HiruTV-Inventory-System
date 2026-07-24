@@ -85,6 +85,12 @@ const StoresInOut = ({ activeSection = 'storesInOut_active' }) => {
     const [showItemDropdown, setShowItemDropdown] = useState(false);
     const [formSaving, setFormSaving] = useState(false);
     
+    // Modal state for two-sided item selection
+    const [isItemModalOpen, setIsItemModalOpen] = useState(false);
+    const [tempSelectedItems, setTempSelectedItems] = useState([]);
+    const [modalSearchTerm, setModalSearchTerm] = useState('');
+    const [modalAddQuantities, setModalAddQuantities] = useState({});
+    
     const storesInOutCollectionName = currentSite?.firebaseCollection
         ? currentSite.firebaseCollection.replace('devices_', 'storesInOut_')
         : null;
@@ -362,6 +368,65 @@ const StoresInOut = ({ activeSection = 'storesInOut_active' }) => {
                 return { ...item, quantity: Math.min(Math.max(1, qty), max) };
             }
             return item;
+        }));
+    };
+
+    const handleOpenItemModal = () => {
+        setTempSelectedItems([...selectedItems]);
+        setModalSearchTerm('');
+        
+        // Initialize add quantities for each inventory item to 1
+        const initialAddQtys = {};
+        inventory.forEach(item => {
+            initialAddQtys[item.id] = 1;
+        });
+        setModalAddQuantities(initialAddQtys);
+        setIsItemModalOpen(true);
+    };
+
+    const handleConfirmItemModal = () => {
+        setSelectedItems(tempSelectedItems);
+        setIsItemModalOpen(false);
+    };
+
+    const handleAddTempItem = (item, qtyToAdd) => {
+        if (tempSelectedItems.some(i => i.id === item.id)) return;
+        
+        const quantity = Math.min(Math.max(1, parseInt(qtyToAdd) || 1), item.quantity ?? 1);
+        
+        setTempSelectedItems([...tempSelectedItems, {
+            id: item.id,
+            pcNumber: item.pcNumber,
+            pcModel: item.pcModel,
+            brand: item.brand || '---',
+            quantity: quantity,
+            maxQty: item.quantity ?? 1,
+            pcSerial: item.pcSerial || '---',
+            department: item.department || '---',
+            subCategory: item.subCategory || ''
+        }]);
+    };
+
+    const handleRemoveTempItem = (itemId) => {
+        setTempSelectedItems(tempSelectedItems.filter(i => i.id !== itemId));
+    };
+
+    const handleTempQtyChange = (itemId, newQty) => {
+        const qty = parseInt(newQty) || 1;
+        setTempSelectedItems(tempSelectedItems.map(item => {
+            if (item.id === itemId) {
+                return { ...item, quantity: Math.min(Math.max(1, qty), item.maxQty) };
+            }
+            return item;
+        }));
+    };
+
+    const handleModalAddQtyChange = (itemId, val, maxQty) => {
+        const parsed = parseInt(val) || 1;
+        const qty = Math.min(Math.max(1, parsed), maxQty);
+        setModalAddQuantities(prev => ({
+            ...prev,
+            [itemId]: qty
         }));
     };
 
@@ -804,6 +869,16 @@ const StoresInOut = ({ activeSection = 'storesInOut_active' }) => {
         );
     });
 
+    const modalFilteredInventory = inventory.filter(item => {
+        if (!modalSearchTerm) return true;
+        const query = modalSearchTerm.toLowerCase();
+        return (
+            item.pcNumber?.toLowerCase().includes(query) ||
+            item.pcModel?.toLowerCase().includes(query) ||
+            item.brand?.toLowerCase().includes(query)
+        );
+    });
+
     return (
         <div className="space-y-8">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -1092,53 +1167,17 @@ const StoresInOut = ({ activeSection = 'storesInOut_active' }) => {
                                 <div className="space-y-4 pt-4 border-t border-slate-100">
                                     {type === 'out' ? (
                                         <>
-                                            <div className="flex items-center justify-between relative">
+                                            <div className="flex items-center justify-between">
                                                 <h4 className="font-black text-[#003135]">Dispatched Items *</h4>
                                                 
-                                                {/* Dropdown Search Picker */}
-                                                <div className="relative w-72">
-                                                    <div className="flex items-center bg-slate-50 border border-slate-200 rounded-2xl px-3 py-1.5 focus-within:bg-white focus-within:border-[#003135] transition-all">
-                                                        <Search size={16} className="text-slate-400 mr-2" />
-                                                        <input 
-                                                            value={searchItemTerm}
-                                                            onChange={(e) => { setSearchItemTerm(e.target.value); setShowItemDropdown(true); }}
-                                                            onFocus={() => setShowItemDropdown(true)}
-                                                            placeholder="Search item to add..."
-                                                            className="w-full bg-transparent text-xs font-bold text-[#003135] focus:outline-none"
-                                                        />
-                                                        {searchItemTerm && (
-                                                            <button type="button" onClick={() => { setSearchItemTerm(''); setShowItemDropdown(false); }}>
-                                                                <X size={14} className="text-slate-400" />
-                                                            </button>
-                                                        )}
-                                                    </div>
-
-                                                    {showItemDropdown && searchItemTerm && (
-                                                        <>
-                                                            <div className="fixed inset-0 z-30" onClick={() => setShowItemDropdown(false)} />
-                                                            <div className="absolute right-0 top-full mt-2 w-full bg-white border border-slate-150 rounded-2xl shadow-xl z-40 max-h-56 overflow-y-auto p-1.5 space-y-1">
-                                                                {filteredInventory.length === 0 ? (
-                                                                    <div className="p-3 text-center text-xs font-semibold text-slate-400">No matching items</div>
-                                                                ) : (
-                                                                    filteredInventory.map(item => (
-                                                                        <button
-                                                                            key={item.id}
-                                                                            type="button"
-                                                                            onClick={() => handleAddItem(item)}
-                                                                            className="w-full text-left p-2.5 hover:bg-slate-50 rounded-xl flex items-center justify-between text-xs transition-colors"
-                                                                        >
-                                                                            <div className="flex flex-col">
-                                                                                <span className="font-bold text-[#003135]">{item.pcNumber}</span>
-                                                                                <span className="text-slate-400 font-medium">{item.brand} {item.pcModel}</span>
-                                                                            </div>
-                                                                            <span className="bg-slate-100 text-[#003135] px-2 py-0.5 rounded-lg text-[10px] font-bold">Qty: {item.quantity ?? 1}</span>
-                                                                        </button>
-                                                                    ))
-                                                                )}
-                                                            </div>
-                                                        </>
-                                                    )}
-                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={handleOpenItemModal}
+                                                    className="flex items-center gap-2 px-4 py-2 bg-[#003135] text-white rounded-xl font-bold text-xs hover:bg-[#004a50] transition-colors shadow-md shadow-[#003135]/10"
+                                                >
+                                                    <Plus size={14} />
+                                                    Add / Manage Items
+                                                </button>
                                             </div>
 
                                             {/* Selected Items Grid List */}
@@ -1423,6 +1462,214 @@ const StoresInOut = ({ activeSection = 'storesInOut_active' }) => {
                                 )}
                                 <button onClick={() => setIsDetailsOpen(false)} className="px-6 py-3 bg-slate-200 hover:bg-slate-300 text-[#003135] rounded-2xl font-bold transition-all">
                                     Close
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* Two-Sided Item Selection Modal */}
+            <AnimatePresence>
+                {isItemModalOpen && (
+                    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                            className="bg-white w-full max-w-5xl h-[85vh] rounded-[32px] shadow-2xl overflow-hidden flex flex-col"
+                        >
+                            {/* Modal Header */}
+                            <div className="px-8 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                                <div>
+                                    <h2 className="text-xl font-black text-[#003135] tracking-tight">Add & Manage Items</h2>
+                                    <p className="text-xs text-slate-500 font-medium">Select items from inventory and assign quantities</p>
+                                </div>
+                                <button type="button" onClick={() => setIsItemModalOpen(false)} className="p-1.5 hover:bg-slate-200 rounded-full transition-colors text-slate-400">
+                                    <X size={20} />
+                                </button>
+                            </div>
+
+                            {/* Modal Content - Split Layout */}
+                            <div className="flex-1 flex overflow-hidden min-h-0">
+                                {/* Left Side: Selected Items List */}
+                                <div className="w-1/2 border-r border-slate-100 flex flex-col bg-slate-50/30">
+                                    <div className="p-5 border-b border-slate-100 bg-white">
+                                        <div className="flex items-center justify-between">
+                                            <h3 className="font-black text-sm text-[#003135] uppercase tracking-wider">Selected Items</h3>
+                                            <span className="bg-teal-50 text-[#003135] border border-teal-100 px-2.5 py-0.5 rounded-full text-xs font-bold">
+                                                {tempSelectedItems.length} Device(s)
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    {/* Scrollable Selection List */}
+                                    <div className="flex-1 overflow-y-auto p-5 space-y-3">
+                                        {tempSelectedItems.length === 0 ? (
+                                            <div className="h-full flex flex-col items-center justify-center text-center p-8 text-slate-400">
+                                                <ClipboardList size={40} strokeWidth={1.5} className="mb-2 text-slate-350" />
+                                                <p className="text-xs font-bold">No items added yet</p>
+                                                <p className="text-[10px] text-slate-400 mt-1 max-w-[200px]">Search and add items from the right panel</p>
+                                            </div>
+                                        ) : (
+                                            tempSelectedItems.map((item) => (
+                                                <div 
+                                                    key={item.id}
+                                                    className="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm hover:shadow-md transition-all flex items-center justify-between"
+                                                >
+                                                    <div className="space-y-1">
+                                                        <div className="font-mono font-bold text-xs text-[#003135] bg-slate-100 px-2 py-0.5 rounded-md inline-block">
+                                                            {item.pcNumber}
+                                                        </div>
+                                                        <div className="text-xs font-bold text-slate-700">{item.brand} {item.pcModel}</div>
+                                                        <div className="text-[10px] text-slate-400">Serial: {item.pcSerial || '---'}</div>
+                                                    </div>
+
+                                                    <div className="flex items-center gap-3">
+                                                        {/* Quantity Changer */}
+                                                        <div className="flex flex-col items-end gap-1">
+                                                            <div className="flex items-center gap-1.5">
+                                                                <input
+                                                                    type="number"
+                                                                    min="1"
+                                                                    max={item.maxQty}
+                                                                    value={item.quantity}
+                                                                    onChange={(e) => handleTempQtyChange(item.id, e.target.value)}
+                                                                    className="w-14 px-1.5 py-1 text-xs text-center font-bold bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-[#003135]"
+                                                                />
+                                                                <span className="text-[10px] text-slate-400 font-medium">/ {item.maxQty}</span>
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Trash Button */}
+                                                        <button 
+                                                            type="button" 
+                                                            onClick={() => handleRemoveTempItem(item.id)}
+                                                            className="p-1.5 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-colors"
+                                                        >
+                                                            <Trash2 size={15} />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+
+                                    {/* Left Panel Footer / Summary */}
+                                    <div className="p-5 border-t border-slate-100 bg-white flex items-center justify-between text-xs font-bold text-slate-600 shadow-[0_-2px_10px_rgba(0,0,0,0.02)]">
+                                        <span>Total Quantity:</span>
+                                        <span className="text-sm font-black text-[#003135]">
+                                            {tempSelectedItems.reduce((acc, curr) => acc + (curr.quantity || 0), 0)}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {/* Right Side: Search Panel */}
+                                <div className="w-1/2 flex flex-col bg-white">
+                                    {/* Search Bar */}
+                                    <div className="p-5 border-b border-slate-100 space-y-3">
+                                        <h3 className="font-black text-sm text-[#003135] uppercase tracking-wider">Search Inventory</h3>
+                                        <div className="flex items-center bg-slate-50 border border-slate-200 rounded-2xl px-4 py-2.5 focus-within:bg-white focus-within:border-[#003135] transition-all">
+                                            <Search size={18} className="text-slate-400 mr-2" />
+                                            <input 
+                                                value={modalSearchTerm}
+                                                onChange={(e) => setModalSearchTerm(e.target.value)}
+                                                placeholder="Type pc number, model, brand..."
+                                                className="w-full bg-transparent text-xs font-bold text-[#003135] focus:outline-none"
+                                            />
+                                            {modalSearchTerm && (
+                                                <button type="button" onClick={() => setModalSearchTerm('')}>
+                                                    <X size={16} className="text-slate-400" />
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Inventory List */}
+                                    <div className="flex-1 overflow-y-auto p-5 space-y-2.5">
+                                        {modalFilteredInventory.length === 0 ? (
+                                            <div className="h-full flex flex-col items-center justify-center text-center p-8 text-slate-400">
+                                                <Search size={32} strokeWidth={1.5} className="mb-2 text-slate-350" />
+                                                <p className="text-xs font-bold">No matching items found</p>
+                                            </div>
+                                        ) : (
+                                            modalFilteredInventory.map((item) => {
+                                                const isAdded = tempSelectedItems.some(i => i.id === item.id);
+                                                const addQty = modalAddQuantities[item.id] || 1;
+                                                const maxQty = item.quantity ?? 1;
+                                                
+                                                return (
+                                                    <div 
+                                                        key={item.id}
+                                                        className={`border rounded-2xl p-4 transition-all flex items-center justify-between 
+                                                            ${isAdded 
+                                                                ? 'border-emerald-100 bg-emerald-50/20' 
+                                                                : 'border-slate-100 hover:border-slate-200 hover:bg-slate-50/30'
+                                                            }
+                                                        `}
+                                                    >
+                                                        <div className="space-y-1">
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="font-mono font-bold text-xs text-[#003135] bg-slate-100 px-2 py-0.5 rounded-md">
+                                                                    {item.pcNumber}
+                                                                </span>
+                                                                <span className="text-[10px] bg-slate-100 text-slate-500 font-bold px-2 py-0.5 rounded-md">
+                                                                    In Stock: {maxQty}
+                                                                </span>
+                                                            </div>
+                                                            <div className="text-xs font-bold text-slate-700">{item.brand} {item.pcModel}</div>
+                                                            <div className="text-[10px] text-slate-405">Serial: {item.pcSerial || '---'}</div>
+                                                        </div>
+
+                                                        <div>
+                                                            {isAdded ? (
+                                                                <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-emerald-50 border border-emerald-100 text-emerald-600 rounded-xl text-xs font-black">
+                                                                    <Check size={14} strokeWidth={2.5} />
+                                                                    Added
+                                                                </span>
+                                                            ) : (
+                                                                <div className="flex items-center gap-2">
+                                                                    <input 
+                                                                        type="number"
+                                                                        min="1"
+                                                                        max={maxQty}
+                                                                        value={addQty}
+                                                                        onChange={(e) => handleModalAddQtyChange(item.id, e.target.value, maxQty)}
+                                                                        className="w-14 px-1.5 py-1 text-xs text-center font-bold bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-[#003135]"
+                                                                    />
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => handleAddTempItem(item, addQty)}
+                                                                        className="px-3.5 py-1.5 bg-[#003135] hover:bg-[#004a50] text-white text-xs font-bold rounded-xl transition-all shadow-sm"
+                                                                    >
+                                                                        Add
+                                                                    </button>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Modal Footer */}
+                            <div className="px-8 py-5 border-t border-slate-100 bg-slate-50/50 flex justify-end gap-3 rounded-b-[32px]">
+                                <button 
+                                    type="button" 
+                                    onClick={() => setIsItemModalOpen(false)}
+                                    className="px-5 py-2.5 bg-slate-200 hover:bg-slate-300 text-[#003135] rounded-xl font-bold text-xs transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button 
+                                    type="button" 
+                                    onClick={handleConfirmItemModal}
+                                    className="px-5 py-2.5 bg-[#003135] hover:bg-[#004a50] text-white rounded-xl font-bold text-xs transition-all shadow-md shadow-[#003135]/10"
+                                >
+                                    Confirm & Close
                                 </button>
                             </div>
                         </motion.div>
