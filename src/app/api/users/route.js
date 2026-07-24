@@ -43,15 +43,41 @@ function forbidden() {
 
 // GET /api/users — list all users
 export async function GET(request) {
+    let caller;
     try {
-        await requireAdmin(request);
+        caller = await requireAdmin(request);
     } catch (e) {
         return e.message === 'FORBIDDEN' ? forbidden() : unauthorized();
     }
 
     const snapshot = await adminDb.collection('users').orderBy('createdAt', 'desc').get();
     // Ensure Firestore doc id isn't overwritten by a stored `id` field.
-    const users = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+    let users = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+
+    // Filter users if the caller is not a Super Admin
+    if (!caller.isSuperAdmin) {
+        const managedSites = [];
+        if (caller.permissions?.manage_wtc) managedSites.push('wtc');
+        if (caller.permissions?.manage_hls) managedSites.push('hls');
+        if (caller.permissions?.manage_hlse) managedSites.push('hlse');
+
+        const siteKeys = {
+            wtc: ['canAccessWTC', 'wtc_canAdd', 'wtc_canEdit', 'wtc_canDelete', 'manage_wtc'],
+            hls: ['canAccessHLS', 'hls_canAdd', 'hls_canEdit', 'hls_canDelete', 'manage_hls'],
+            hlse: ['canAccessHLSE', 'hlse_canAdd', 'hlse_canEdit', 'hlse_canDelete', 'hlse_canCreateSIO', 'hlse_canApproveSIO', 'manage_hlse']
+        };
+
+        const allowedKeys = new Set();
+        managedSites.forEach(site => {
+            siteKeys[site]?.forEach(k => allowedKeys.add(k));
+        });
+
+        users = users.filter(u => {
+            if (u.uid === caller.uid) return true;
+            return Array.from(allowedKeys).some(key => u.permissions?.[key] === true);
+        });
+    }
+
     return Response.json({ users });
 }
 

@@ -47,6 +47,30 @@ export async function PATCH(request, { params }) {
         return Response.json({ error: 'Only Super Admins can change user roles' }, { status: 403 });
     }
 
+    // 4. Site Admins can only modify users belonging to the sites they manage.
+    if (!caller.isSuperAdmin && caller.uid !== uid) {
+        const managedSites = [];
+        if (caller.permissions?.manage_wtc) managedSites.push('wtc');
+        if (caller.permissions?.manage_hls) managedSites.push('hls');
+        if (caller.permissions?.manage_hlse) managedSites.push('hlse');
+
+        const siteKeys = {
+            wtc: ['canAccessWTC', 'wtc_canAdd', 'wtc_canEdit', 'wtc_canDelete', 'manage_wtc'],
+            hls: ['canAccessHLS', 'hls_canAdd', 'hls_canEdit', 'hls_canDelete', 'manage_hls'],
+            hlse: ['canAccessHLSE', 'hlse_canAdd', 'hlse_canEdit', 'hlse_canDelete', 'hlse_canCreateSIO', 'hlse_canApproveSIO', 'manage_hlse']
+        };
+
+        const allowedKeys = new Set();
+        managedSites.forEach(site => {
+            siteKeys[site]?.forEach(k => allowedKeys.add(k));
+        });
+
+        const hasAccess = Array.from(allowedKeys).some(key => targetData.permissions?.[key] === true);
+        if (!hasAccess) {
+            return Response.json({ error: 'Forbidden — you do not have permission to manage this user' }, { status: 403 });
+        }
+    }
+
     const firestoreUpdate = {};
     const authUpdate = {};
 
@@ -131,6 +155,30 @@ export async function DELETE(request, { params }) {
     // Only Super Admin can delete other Admins or Super Admins
     if (!caller.isSuperAdmin && (targetData.isAdmin || targetData.isSuperAdmin)) {
         return Response.json({ error: 'Only Super Admins can delete administrative accounts' }, { status: 403 });
+    }
+
+    // Site Admins can only delete users belonging to the sites they manage.
+    if (!caller.isSuperAdmin) {
+        const managedSites = [];
+        if (caller.permissions?.manage_wtc) managedSites.push('wtc');
+        if (caller.permissions?.manage_hls) managedSites.push('hls');
+        if (caller.permissions?.manage_hlse) managedSites.push('hlse');
+
+        const siteKeys = {
+            wtc: ['canAccessWTC', 'wtc_canAdd', 'wtc_canEdit', 'wtc_canDelete', 'manage_wtc'],
+            hls: ['canAccessHLS', 'hls_canAdd', 'hls_canEdit', 'hls_canDelete', 'manage_hls'],
+            hlse: ['canAccessHLSE', 'hlse_canAdd', 'hlse_canEdit', 'hlse_canDelete', 'hlse_canCreateSIO', 'hlse_canApproveSIO', 'manage_hlse']
+        };
+
+        const allowedKeys = new Set();
+        managedSites.forEach(site => {
+            siteKeys[site]?.forEach(k => allowedKeys.add(k));
+        });
+
+        const hasAccess = Array.from(allowedKeys).some(key => targetData.permissions?.[key] === true);
+        if (!hasAccess) {
+            return Response.json({ error: 'Forbidden — you do not have permission to manage this user' }, { status: 403 });
+        }
     }
 
     await adminAuth.deleteUser(uid);
