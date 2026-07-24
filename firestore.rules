@@ -1,0 +1,35 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Allow authenticated users to read/write their own user document
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Allow authenticated users to access site configuration (departments, etc.)
+    match /sites/{siteId} {
+      allow read, write: if request.auth != null;
+    }
+    
+    match /devices_wtc/{document=**} { allow read, write: if request.auth != null; }
+    match /activityLogs_wtc/{document=**} { allow read, write: if request.auth != null; }
+    match /repairHistory_wtc/{document=**} { allow read, write: if request.auth != null; }
+    match /storesInOut_wtc/{document=**} { allow read, write: if request.auth != null; }
+    
+    match /devices_hls/{document=**} { allow read, write: if request.auth != null; }
+    match /activityLogs_hls/{document=**} { allow read, write: if request.auth != null; }
+    match /repairHistory_hls/{document=**} { allow read, write: if request.auth != null; }
+    match /storesInOut_hls/{document=**} { allow read, write: if request.auth != null; }
+
+    match /devices_hlse/{document=**} { allow read, write: if request.auth != null; }
+    match /activityLogs_hlse/{document=**} { allow read, write: if request.auth != null; }
+    match /repairHistory_hlse/{document=**} { allow read, write: if request.auth != null; }
+    match /storesInOut_hlse/{document=**} { allow read, write: if request.auth != null; }
+    
+    // Default deny for everything else
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

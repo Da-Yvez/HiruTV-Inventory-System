@@ -16,6 +16,7 @@ import QRSecurity from '@/components/settings/QRSecurity';
 import SystemLogs from '@/components/settings/SystemLogs';
 import QRPrinting from '@/components/inventory/QRPrinting';
 import ForcePasswordChange from '@/components/auth/ForcePasswordChange';
+import StoresInOut from '@/components/stores/StoresInOut';
 
 export default function Home() {
   const { user, loading: authLoading } = useAuth();
@@ -125,6 +126,8 @@ export default function Home() {
           </>
         ) : activeSection === 'qrPrint' ? (
           <QRPrinting />
+        ) : (activeSection === 'storesInOut' || activeSection.startsWith('storesInOut_')) ? (
+          <StoresInOut activeSection={activeSection} />
         ) : activeSection === 'logs' ? (
           <ActivityLogs />
         ) : activeSection === 'departments' ? (

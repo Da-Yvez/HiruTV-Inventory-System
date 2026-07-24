@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useSite } from '@/context/SiteContext';
 import { hasPermission } from '@/lib/permissions';
@@ -12,9 +12,9 @@ import {
     LogOut, 
     ChevronLeft, 
     ChevronRight,
+    ChevronDown,
     ShieldCheck,
     Shield,
-    Download,
     Users,
     ArrowLeftRight,
     QrCode,
@@ -34,6 +34,18 @@ const DashboardLayout = ({ children, activeSection, onSectionChange, isSystemMod
         { id: 'systemLogs', label: 'System Logs', icon: <History size={20} />, show: user?.isAdmin === true },
     ].filter(item => item.show) : [
         { id: 'inventory',  label: currentSite?.id === 'hlse' ? 'Item Inventory' : 'Device Inventory',  icon: <LayoutDashboard size={20} />, show: hasPermission(user, 'canAccessWTC') || hasPermission(user, 'canAccessHLS') || hasPermission(user, 'canAccessHLSE') },
+        { 
+            id: 'storesInOut', 
+            label: 'Item In and Out', 
+            icon: <ArrowLeftRight size={20} />, 
+            show: hasPermission(user, 'canAccessWTC') || hasPermission(user, 'canAccessHLS') || hasPermission(user, 'canAccessHLSE'),
+            subItems: [
+                { id: 'storesInOut_active', label: 'In and Out' },
+                { id: 'storesInOut_outside', label: 'Outside SIO' },
+                { id: 'storesInOut_approvals', label: 'Approves' },
+                { id: 'storesInOut_completed', label: 'Completed SIO' },
+            ]
+        },
         { id: 'addDevice',  label: currentSite?.id === 'hlse' ? 'Add New Item' : 'Add New Device',    icon: <PlusCircle size={20} />,      show: hasPermission(user, 'wtc_canAdd') || hasPermission(user, 'hls_canAdd') || hasPermission(user, 'hlse_canAdd') },
         { id: 'qrPrint',    label: 'QR Batch Print',    icon: <Printer size={20} />,         show: hasPermission(user, 'canAccessWTC') || hasPermission(user, 'canAccessHLS') || hasPermission(user, 'canAccessHLSE') },
         { id: 'logs',       label: 'Activity Logs',     icon: <History size={20} />,          show: hasPermission(user, 'canViewLogs') },
@@ -44,22 +56,87 @@ const DashboardLayout = ({ children, activeSection, onSectionChange, isSystemMod
         { id: 'departments', label: currentSite?.id === 'hlse' ? 'Categories' : 'Departments', icon: <Settings size={20} />, show: hasPermission(user, 'canManageDepartments') },
     ].filter(item => item.show);
 
-    const NavItem = ({ item }) => (
-        <li>
-            <button
-                onClick={() => onSectionChange(item.id)}
-                className={`
-                    w-full flex items-center p-3 rounded-xl transition-all duration-200
-                    ${activeSection === item.id
-                        ? 'bg-[#003135] text-white shadow-lg shadow-[#003135]/20'
-                        : 'text-[#5A6C6D] hover:bg-slate-50 hover:text-[#003135]'}
-                `}
-            >
-                <span className="min-w-[40px] flex justify-center">{item.icon}</span>
-                {isSidebarOpen && <span className="ml-2 font-semibold">{item.label}</span>}
-            </button>
-        </li>
-    );
+    const NavItem = ({ item }) => {
+        const hasSubs = !!item.subItems;
+        const isSubItemActive = hasSubs && item.subItems.some(sub => activeSection === sub.id);
+        const [isOpen, setIsOpen] = useState(isSubItemActive);
+
+        useEffect(() => {
+            if (isSubItemActive) {
+                setIsOpen(true);
+            }
+        }, [isSubItemActive]);
+
+        if (hasSubs) {
+            return (
+                <li className="space-y-1">
+                    <button
+                        onClick={() => {
+                            if (!isSidebarOpen) {
+                                setIsSidebarOpen(true);
+                            }
+                            setIsOpen(!isOpen);
+                        }}
+                        className={`
+                            w-full flex items-center justify-between p-3 rounded-xl transition-all duration-200
+                            ${isSubItemActive 
+                                ? 'text-[#003135] bg-slate-50/50 font-bold' 
+                                : 'text-[#5A6C6D] hover:bg-slate-50 hover:text-[#003135]'}
+                        `}
+                    >
+                        <div className="flex items-center">
+                            <span className="min-w-[40px] flex justify-center">{item.icon}</span>
+                            {isSidebarOpen && <span className="ml-2 font-semibold text-sm">{item.label}</span>}
+                        </div>
+                        {isSidebarOpen && (
+                            <span>
+                                {isOpen ? <ChevronDown size={14} strokeWidth={2.5} /> : <ChevronRight size={14} strokeWidth={2.5} />}
+                            </span>
+                        )}
+                    </button>
+                    {isOpen && isSidebarOpen && (
+                        <ul className="pl-4 space-y-1.5 border-l border-slate-200 ml-8 mt-1">
+                            {item.subItems.map(sub => {
+                                const isActive = activeSection === sub.id;
+                                return (
+                                    <li key={sub.id}>
+                                        <button
+                                            onClick={() => onSectionChange(sub.id)}
+                                            className={`
+                                                w-full text-left py-2 px-3 rounded-lg text-xs font-bold transition-all duration-200
+                                                ${isActive 
+                                                    ? 'bg-[#003135] text-white shadow-md shadow-[#003135]/10' 
+                                                    : 'text-[#5A6C6D] hover:text-[#003135] hover:bg-slate-50'}
+                                            `}
+                                        >
+                                            {sub.label}
+                                        </button>
+                                    </li>
+                                );
+                            })}
+                        </ul>
+                    )}
+                </li>
+            );
+        }
+
+        return (
+            <li>
+                <button
+                    onClick={() => onSectionChange(item.id)}
+                    className={`
+                        w-full flex items-center p-3 rounded-xl transition-all duration-200
+                        ${activeSection === item.id
+                            ? 'bg-[#003135] text-white shadow-lg shadow-[#003135]/20'
+                            : 'text-[#5A6C6D] hover:bg-slate-50 hover:text-[#003135]'}
+                    `}
+                >
+                    <span className="min-w-[40px] flex justify-center">{item.icon}</span>
+                    {isSidebarOpen && <span className="ml-2 font-semibold text-sm">{item.label}</span>}
+                </button>
+            </li>
+        );
+    };
 
     const SectionLabel = ({ label }) => (
         <div className="mt-8 px-6 mb-2">
@@ -111,26 +188,6 @@ const DashboardLayout = ({ children, activeSection, onSectionChange, isSystemMod
                             <SectionLabel label="Main" />
                             <ul className="space-y-2 px-3">
                                 {mainMenuItems.map(item => <NavItem key={item.id} item={item} />)}
-                            </ul>
-                        </>
-                    )}
-
-                    {/* Information — Only for site context */}
-                    {!isSystemMode && (
-                        <>
-                            <SectionLabel label="Information" />
-                            <ul className="space-y-2 px-3">
-                                <li>
-                                    <a
-                                        href="/downloads/advisorinstaller.exe"
-                                        download
-                                        className="w-full flex items-center p-3 text-[#5A6C6D] hover:bg-slate-50 hover:text-[#003135] rounded-xl transition-all"
-                                    >
-                                        <span className="min-w-[40px] flex justify-center"><Download size={20} /></span>
-                                        {isSidebarOpen && <span className="ml-2 font-semibold">Download App</span>}
-                                    </a>
-                                </li>
-
                             </ul>
                         </>
                     )}

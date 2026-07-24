@@ -5,7 +5,7 @@ import { useSite } from '@/context/SiteContext';
 import { useAuth } from '@/context/AuthContext';
 import { hasPermission } from '@/lib/permissions';
 import { motion } from 'framer-motion';
-import { Building2, Globe, ArrowRight, Lock } from 'lucide-react';
+import { Building2, Globe, ArrowRight, Lock, Cpu } from 'lucide-react';
 
 import { GLSLHills } from '@/components/glsl-hills';
 
@@ -36,6 +36,15 @@ const SiteSelection = ({ onOpenSettings }) => {
         }
     };
 
+    const renderIcon = (iconName) => {
+        switch (iconName) {
+            case 'Building2': return <Building2 size={38} />;
+            case 'Globe': return <Globe size={38} />;
+            case 'Cpu': return <Cpu size={38} />;
+            default: return <Globe size={38} />;
+        }
+    };
+
     return (
         <div className="relative min-h-screen w-full overflow-hidden bg-black flex items-center justify-center p-6">
             {/* ── Animated Hills Background ── */}
@@ -46,7 +55,7 @@ const SiteSelection = ({ onOpenSettings }) => {
             {/* ── Dark overlay for readability ── */}
             <div className="absolute inset-0 bg-black/50 backdrop-blur-[1px] z-1" />
 
-            <div className="relative z-10 w-full max-w-5xl">
+            <div className="relative z-10 w-full max-w-6xl">
                 <motion.div
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -64,7 +73,7 @@ const SiteSelection = ({ onOpenSettings }) => {
                     variants={container}
                     initial="hidden"
                     animate="show"
-                    className="grid grid-cols-1 md:grid-cols-2 gap-10"
+                    className="grid grid-cols-1 md:grid-cols-3 gap-8"
                 >
                     {Object.values(siteConfig).map((site) => {
                         const permKey = sitePermKey[site.id];
@@ -84,7 +93,7 @@ const SiteSelection = ({ onOpenSettings }) => {
                                 <div className="absolute -inset-px rounded-[40px] bg-gradient-to-br from-orange-500/30 to-red-600/30 blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                             )}
                             
-                            <div className="relative bg-black/60 backdrop-blur-2xl border border-white/10 rounded-[40px] p-10 shadow-2xl transition-all duration-300">
+                            <div className="relative bg-black/60 backdrop-blur-2xl border border-white/10 rounded-[40px] p-8 shadow-2xl transition-all duration-300">
                                 {canAccess && (
                                     <div className="absolute top-0 right-0 w-40 h-40 bg-orange-500/5 rounded-bl-full transform translate-x-10 -translate-y-10 group-hover:translate-x-5 group-hover:-translate-y-5 transition-transform duration-500" />
                                 )}
@@ -92,12 +101,12 @@ const SiteSelection = ({ onOpenSettings }) => {
                                 <div className="relative z-10">
                                     <div className={`w-20 h-20 rounded-3xl flex items-center justify-center mb-8 text-white shadow-lg transition-transform duration-300 ${canAccess ? 'bg-gradient-to-br from-orange-500 to-red-600 shadow-orange-500/20 group-hover:rotate-6' : 'bg-white/10'}`}>
                                         {canAccess
-                                            ? (site.icon === 'Building2' ? <Building2 size={38} /> : <Globe size={38} />)
+                                            ? renderIcon(site.icon)
                                             : <Lock size={32} />}
                                     </div>
                                     
-                                    <h3 className={`text-4xl font-black mb-3 transition-colors ${canAccess ? 'text-white group-hover:text-orange-400' : 'text-white/50'}`}>{site.name}</h3>
-                                    <p className="text-white/40 text-lg mb-10 h-14 font-medium leading-relaxed">{site.fullName}</p>
+                                    <h3 className={`text-3xl font-black mb-3 transition-colors ${canAccess ? 'text-white group-hover:text-orange-400' : 'text-white/50'}`}>{site.name}</h3>
+                                    <p className="text-white/40 text-base mb-10 h-14 font-medium leading-relaxed">{site.fullName}</p>
                                     
                                     <div className={`flex items-center gap-3 font-black tracking-wider uppercase text-sm transition-all ${canAccess ? 'text-orange-400 group-hover:gap-6' : 'text-white/20'}`}>
                                         {canAccess ? (

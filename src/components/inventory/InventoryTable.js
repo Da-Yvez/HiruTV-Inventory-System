@@ -93,6 +93,9 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
 
             setDevices(sortedDevices);
             setLoading(false);
+        }, (error) => {
+            console.error("Inventory listener error:", error);
+            setLoading(false);
         });
 
         return () => unsubscribe();
@@ -629,9 +632,16 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
                                                     <span className="text-sm text-slate-600 font-semibold">{device.pcModel}</span>
                                                 </td>
                                                 <td className="px-6 py-4">
-                                                    <span className="inline-flex px-3 py-1 bg-slate-100 text-[#003135] rounded-lg text-[10px] font-black uppercase tracking-wider border border-slate-200">
-                                                        {device.department}
-                                                    </span>
+                                                    <div className="flex flex-col gap-1 items-start">
+                                                        <span className="inline-flex px-3 py-1 bg-slate-100 text-[#003135] rounded-lg text-[10px] font-black uppercase tracking-wider border border-slate-200">
+                                                            {device.department}
+                                                        </span>
+                                                        {device.subCategory && (
+                                                            <span className="text-[10px] text-slate-400 font-bold tracking-wider pl-1">
+                                                                ↳ {device.subCategory}
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     <span className="text-sm font-bold text-slate-700">{device.quantity ?? 1}</span>
@@ -659,9 +669,16 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4">
-                                                    <span className="inline-flex px-3 py-1 bg-slate-100 text-[#003135] rounded-lg text-[10px] font-black uppercase tracking-wider border border-slate-200">
-                                                        {device.department}
-                                                    </span>
+                                                    <div className="flex flex-col gap-1 items-start">
+                                                        <span className="inline-flex px-3 py-1 bg-slate-100 text-[#003135] rounded-lg text-[10px] font-black uppercase tracking-wider border border-slate-200">
+                                                            {device.department}
+                                                        </span>
+                                                        {device.subCategory && (
+                                                            <span className="text-[10px] text-slate-400 font-bold tracking-wider pl-1">
+                                                                ↳ {device.subCategory}
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     <div className="flex items-center gap-2">
@@ -751,6 +768,7 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
                 onSave={handleSave}
                 initialData={selectedDevice}
                 departments={currentSite.departments}
+                subcategories={currentSite.subcategories || {}}
                 isReadOnly={isViewMode}
                 collectionName={currentSite?.firebaseCollection}
             />

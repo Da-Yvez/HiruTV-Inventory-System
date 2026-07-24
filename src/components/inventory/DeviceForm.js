@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const DeviceForm = ({ isOpen, onClose, onSave, initialData = null, departments = [], isReadOnly = false, collectionName }) => {
+const DeviceForm = ({ isOpen, onClose, onSave, initialData = null, departments = [], subcategories = {}, isReadOnly = false, collectionName }) => {
     const [showLicense, setShowLicense] = useState({});
     const normalizeInterfaces = (interfaces) => {
         const list = Array.isArray(interfaces) ? interfaces : [];
@@ -47,6 +47,7 @@ const DeviceForm = ({ isOpen, onClose, onSave, initialData = null, departments =
         pcModel: '',
         pcSerial: '',
         department: '',
+        subCategory: '',
         userName: '',
         status: 'active',
         deviceType: 'pc',
@@ -76,6 +77,7 @@ const DeviceForm = ({ isOpen, onClose, onSave, initialData = null, departments =
         if (initialData) {
             setFormData({
                 ...formData,
+                subCategory: '',
                 ...initialData,
                 networkInterfaces: normalizeInterfaces(initialData.networkInterfaces),
                 monitors: initialData.monitors || [],
@@ -88,6 +90,7 @@ const DeviceForm = ({ isOpen, onClose, onSave, initialData = null, departments =
                 pcModel: '',
                 pcSerial: '',
                 department: '',
+                subCategory: '',
                 userName: '',
                 status: 'active',
                 deviceType: 'pc',
@@ -109,7 +112,11 @@ const DeviceForm = ({ isOpen, onClose, onSave, initialData = null, departments =
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
+        if (name === 'department') {
+            setFormData(prev => ({ ...prev, department: value, subCategory: '' }));
+        } else {
+            setFormData(prev => ({ ...prev, [name]: value }));
+        }
     };
 
     const handleListChange = (listName, index, field, value) => {
@@ -228,7 +235,7 @@ const DeviceForm = ({ isOpen, onClose, onSave, initialData = null, departments =
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="space-y-1.5">
                                     <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Category *</label>
                                     <select 
@@ -245,6 +252,27 @@ const DeviceForm = ({ isOpen, onClose, onSave, initialData = null, departments =
                                         ))}
                                     </select>
                                 </div>
+                                {formData.department && subcategories[formData.department] && subcategories[formData.department].length > 0 && (
+                                    <div className="space-y-1.5">
+                                        <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Subcategory *</label>
+                                        <select 
+                                            required
+                                            name="subCategory"
+                                            value={formData.subCategory || ''}
+                                            onChange={handleChange}
+                                            disabled={isReadOnly}
+                                            className="w-full px-5 py-3 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:outline-none focus:border-[#003135] focus:bg-white transition-all font-bold text-[#003135] appearance-none disabled:opacity-70 disabled:cursor-not-allowed"
+                                        >
+                                            <option value="">Select Subcategory</option>
+                                            {subcategories[formData.department].map(sub => (
+                                                <option key={sub} value={sub}>{sub}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="space-y-1.5">
                                     <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Quantity *</label>
                                     <input 
@@ -355,7 +383,7 @@ const DeviceForm = ({ isOpen, onClose, onSave, initialData = null, departments =
                                         />
                                     </div>
                                 </div>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="space-y-1.5">
                                         <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Department *</label>
                                         <select 
@@ -372,6 +400,27 @@ const DeviceForm = ({ isOpen, onClose, onSave, initialData = null, departments =
                                             ))}
                                         </select>
                                     </div>
+                                    {formData.department && subcategories[formData.department] && subcategories[formData.department].length > 0 && (
+                                        <div className="space-y-1.5">
+                                            <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Subdepartment *</label>
+                                            <select 
+                                                required
+                                                name="subCategory"
+                                                value={formData.subCategory || ''}
+                                                onChange={handleChange}
+                                                disabled={isReadOnly}
+                                                className="w-full px-5 py-3 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:outline-none focus:border-[#003135] focus:bg-white transition-all font-bold text-[#003135] appearance-none disabled:opacity-70 disabled:cursor-not-allowed"
+                                            >
+                                                <option value="">Select Subdepartment</option>
+                                                {subcategories[formData.department].map(sub => (
+                                                    <option key={sub} value={sub}>{sub}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="space-y-1.5">
                                         <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">User Name</label>
                                         <input maxLength={100} 
