@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { PERMISSIONS, DEFAULT_PERMISSIONS } from '@/lib/permissions';
-import { X, ShieldCheck, Shield, Loader2, Eye, EyeOff } from 'lucide-react';
+import { X, ShieldCheck, Shield, Loader2, Eye, EyeOff, ChevronDown, ChevronRight } from 'lucide-react';
 
 export default function UserFormModal({ mode, user, onClose, onSuccess }) {
     const { getAuthToken, user: currentUser } = useAuth();
@@ -21,6 +21,43 @@ export default function UserFormModal({ mode, user, onClose, onSuccess }) {
 
     const togglePermission = (key) => {
         setPermissions(prev => ({ ...prev, [key]: !prev[key] }));
+    };
+
+    const [expandedCategories, setExpandedCategories] = useState({
+        wtc: false,
+        hls: false,
+        hlse: false,
+        system: false
+    });
+
+    const toggleCategory = (catId) => {
+        setExpandedCategories(prev => ({ ...prev, [catId]: !prev[catId] }));
+    };
+
+    const getGroupedPermissions = () => {
+        const wtc = [];
+        const hls = [];
+        const hlse = [];
+        const system = [];
+
+        visiblePermissions.filter(p => !p.key.startsWith('manage_')).forEach(perm => {
+            if (perm.key.startsWith('wtc_') || perm.key === 'canAccessWTC') {
+                wtc.push(perm);
+            } else if (perm.key.startsWith('hls_') || perm.key === 'canAccessHLS') {
+                hls.push(perm);
+            } else if (perm.key.startsWith('hlse_') || perm.key === 'canAccessHLSE') {
+                hlse.push(perm);
+            } else {
+                system.push(perm);
+            }
+        });
+
+        return [
+            { id: 'wtc', title: 'WTC Site Permissions', items: wtc },
+            { id: 'hls', title: 'Life Studio Site Permissions', items: hls },
+            { id: 'hlse', title: 'Life Studio Equipments Site Permissions', items: hlse },
+            { id: 'system', title: 'System Permissions', items: system },
+        ].filter(group => group.items.length > 0);
     };
 
     const handleSubmit = async (e) => {
@@ -284,47 +321,67 @@ export default function UserFormModal({ mode, user, onClose, onSuccess }) {
 
                     {/* Permissions Matrix (Non-Management) */}
                     {!isSuperAdmin && (
-                        <div>
-                            <div className="flex items-center gap-2 mb-3 mt-4">
+                        <div className="space-y-4">
+                            <div className="flex items-center gap-2 mt-4">
                                 <Shield size={16} className="text-[#00A3A8]" />
                                 <p className="text-xs font-bold text-[#003135] uppercase tracking-wider">Functional Permissions</p>
                             </div>
-                            <div className="space-y-2 border border-[#D1DDDE] rounded-xl overflow-hidden">
-                                {visiblePermissions.filter(p => !p.key.startsWith('manage_')).map((perm, idx, filtered) => {
-                                    // Check if we should show a category header
-                                    let categoryHeader = null;
-                                    if (perm.key === 'canAccessWTC') categoryHeader = "WTC Site Permissions";
-                                    else if (perm.key === 'canAccessHLS') categoryHeader = "Life Studio Site Permissions";
-                                    else if (perm.key === 'canAccessHLSE') categoryHeader = "Life Studio Equipments Site Permissions";
-                                    else if (perm.key === 'canViewLogs') categoryHeader = "System Permissions";
+                            
+                            <div className="space-y-3">
+                                {getGroupedPermissions().map((group) => {
+                                    const isOpen = expandedCategories[group.id];
+                                    const activeCount = group.items.filter(item => permissions[item.key]).length;
 
                                     return (
-                                        <React.Fragment key={perm.key}>
-                                            {categoryHeader && (
-                                                <div className="bg-slate-50 px-4 py-2 border-b border-[#D1DDDE] flex items-center gap-2 mt-2 first:mt-0">
-                                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{categoryHeader}</span>
+                                        <div key={group.id} className="border border-[#D1DDDE] rounded-xl overflow-hidden shadow-sm bg-white">
+                                            {/* Header */}
+                                            <button
+                                                type="button"
+                                                onClick={() => toggleCategory(group.id)}
+                                                className="w-full flex items-center justify-between bg-slate-50 px-4 py-3 border-b border-[#D1DDDE] hover:bg-slate-100 transition-colors text-left"
+                                            >
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-xs font-black text-[#003135] uppercase tracking-wider">{group.title}</span>
+                                                    {activeCount > 0 && (
+                                                        <span className="bg-[#003135]/5 text-[#003135] text-[10px] px-2 py-0.5 rounded-lg font-black">
+                                                            {activeCount} active
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <div className="text-slate-400">
+                                                    {isOpen ? <ChevronDown size={16} strokeWidth={2.5} /> : <ChevronRight size={16} strokeWidth={2.5} />}
+                                                </div>
+                                            </button>
+
+                                            {/* Body */}
+                                            {isOpen && (
+                                                <div className="divide-y divide-slate-100 bg-white">
+                                                    {group.items.map((perm) => (
+                                                        <div
+                                                            key={perm.key}
+                                                            className="flex items-center justify-between px-4 py-3 hover:bg-slate-50/50 transition-colors"
+                                                        >
+                                                            <div>
+                                                                <p className="text-sm font-semibold text-[#003135]">{perm.label}</p>
+                                                                <p className="text-xs text-slate-400">{perm.description}</p>
+                                                            </div>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => togglePermission(perm.key)}
+                                                                className={`relative w-11 h-6 rounded-full transition-colors duration-200 shrink-0 ml-4 ${permissions[perm.key] ? 'bg-[#00A3A8]' : 'bg-slate-200'}`}
+                                                            >
+                                                                <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${permissions[perm.key] ? 'translate-x-5' : ''}`} />
+                                                            </button>
+                                                        </div>
+                                                    ))}
                                                 </div>
                                             )}
-                                            <div
-                                                className={`flex items-center justify-between px-4 py-3 ${idx !== filtered.length - 1 ? 'border-b border-[#D1DDDE]/50' : ''} hover:bg-slate-50 transition-colors`}
-                                            >
-                                                <div>
-                                                    <p className="text-sm font-semibold text-[#003135]">{perm.label}</p>
-                                                    <p className="text-xs text-slate-400">{perm.description}</p>
-                                                </div>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => togglePermission(perm.key)}
-                                                    className={`relative w-11 h-6 rounded-full transition-colors duration-200 shrink-0 ml-4 ${permissions[perm.key] ? 'bg-[#00A3A8]' : 'bg-slate-200'}`}
-                                                >
-                                                    <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${permissions[perm.key] ? 'translate-x-5' : ''}`} />
-                                                </button>
-                                            </div>
-                                        </React.Fragment>
+                                        </div>
                                     );
                                 })}
-                                {visiblePermissions.filter(p => !p.key.startsWith('manage_')).length === 0 && (
-                                    <div className="p-8 text-center text-slate-400 text-sm">
+
+                                {getGroupedPermissions().length === 0 && (
+                                    <div className="p-8 text-center text-slate-400 text-sm border border-dashed border-[#D1DDDE] rounded-xl">
                                         No permissions available for you to assign.
                                     </div>
                                 )}

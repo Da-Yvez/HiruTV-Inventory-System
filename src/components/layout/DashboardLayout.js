@@ -38,13 +38,13 @@ const DashboardLayout = ({ children, activeSection, onSectionChange, isSystemMod
             id: 'storesInOut', 
             label: 'Item In and Out', 
             icon: <ArrowLeftRight size={20} />, 
-            show: hasPermission(user, 'canAccessWTC') || hasPermission(user, 'canAccessHLS') || hasPermission(user, 'canAccessHLSE'),
+            show: currentSite?.id === 'hlse' && hasPermission(user, 'canAccessHLSE'),
             subItems: [
-                { id: 'storesInOut_active', label: 'In and Out' },
-                { id: 'storesInOut_outside', label: 'Outside SIO' },
-                { id: 'storesInOut_approvals', label: 'Approves' },
-                { id: 'storesInOut_completed', label: 'Completed SIO' },
-            ]
+                { id: 'storesInOut_active', label: 'In and Out', show: true },
+                { id: 'storesInOut_outside', label: 'Outside SIO', show: true },
+                { id: 'storesInOut_approvals', label: 'Approves', show: hasPermission(user, 'canApproveSIO', currentSite) },
+                { id: 'storesInOut_completed', label: 'Completed SIO', show: true },
+            ].filter(sub => sub.show)
         },
         { id: 'addDevice',  label: currentSite?.id === 'hlse' ? 'Add New Item' : 'Add New Device',    icon: <PlusCircle size={20} />,      show: hasPermission(user, 'wtc_canAdd') || hasPermission(user, 'hls_canAdd') || hasPermission(user, 'hlse_canAdd') },
         { id: 'qrPrint',    label: 'QR Batch Print',    icon: <Printer size={20} />,         show: hasPermission(user, 'canAccessWTC') || hasPermission(user, 'canAccessHLS') || hasPermission(user, 'canAccessHLSE') },
@@ -175,7 +175,11 @@ const DashboardLayout = ({ children, activeSection, onSectionChange, isSystemMod
                             animate={{ opacity: 1 }}
                             className="font-bold text-xl text-[#003135] whitespace-nowrap"
                         >
-                            {isSystemMode ? 'System' : currentSite?.name} <span className="text-[#00A3A8]">{isSystemMode ? 'Settings' : 'IT'}</span>
+                            {isSystemMode ? 'System' : currentSite?.name} {isSystemMode ? (
+                                <span className="text-[#00A3A8]">Settings</span>
+                            ) : (
+                                currentSite?.id !== 'hlse' && <span className="text-[#00A3A8]">IT</span>
+                            )}
                         </motion.span>
                     )}
                 </div>

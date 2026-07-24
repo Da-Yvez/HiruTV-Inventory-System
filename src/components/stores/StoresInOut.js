@@ -5,6 +5,7 @@ import { db } from '@/lib/firebase';
 import { useSite } from '@/context/SiteContext';
 import { useAuth } from '@/context/AuthContext';
 import { addLog } from '@/lib/utils';
+import { hasPermission } from '@/lib/permissions';
 import { 
     collection, 
     query, 
@@ -811,7 +812,7 @@ const StoresInOut = ({ activeSection = 'storesInOut_active' }) => {
                     <p className="text-slate-500 font-medium">{getPageDesc()}</p>
                 </div>
 
-                {activeSection === 'storesInOut_active' && (
+                {activeSection === 'storesInOut_active' && hasPermission(user, 'canCreateSIO', currentSite) && (
                     <div className="flex items-center gap-3">
                         <button
                             onClick={handleOpenCreateOut}
@@ -909,8 +910,8 @@ const StoresInOut = ({ activeSection = 'storesInOut_active' }) => {
                                                     </button>
                                                 )}
 
-                                                {/* Only allow edit and delete if status is pending and in active view */}
-                                                {activeSection === 'storesInOut_active' && r.status === 'pending' && (
+                                                {/* Only allow edit and delete if status is pending, in active view, and has create permissions */}
+                                                {activeSection === 'storesInOut_active' && r.status === 'pending' && hasPermission(user, 'canCreateSIO', currentSite) && (
                                                     <>
                                                         <button
                                                             onClick={() => handleOpenEdit(r)}

@@ -23,7 +23,10 @@ import {
     ShieldAlert,
     Archive,
     AlertTriangle,
-    QrCode
+    QrCode,
+    Printer,
+    X,
+    FileText
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { addLog, generateQRKey } from '@/lib/utils';
@@ -64,6 +67,38 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
     const [isLabelModalOpen, setIsLabelModalOpen] = useState(false);
     const [deviceForLabel, setDeviceForLabel] = useState(null);
     const [statusFilter, setStatusFilter] = useState('all');
+    
+    // SIO active tracking states
+    const [activeOutSios, setActiveOutSios] = useState([]);
+    const [selectedSioForView, setSelectedSioForView] = useState(null);
+
+    const storesInOutCollectionName = currentSite?.firebaseCollection
+        ? currentSite.firebaseCollection.replace('devices_', 'storesInOut_')
+        : null;
+
+    useEffect(() => {
+        if (!storesInOutCollectionName) {
+            setActiveOutSios([]);
+            return;
+        }
+
+        const q = query(
+            collection(db, storesInOutCollectionName),
+            where('status', '==', 'approved-out')
+        );
+
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const list = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+            setActiveOutSios(list);
+        }, (error) => {
+            console.error("Error loading active SIO records for inventory:", error);
+        });
+
+        return () => unsubscribe();
+    }, [storesInOutCollectionName]);
 
 
     useEffect(() => {
@@ -143,6 +178,222 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
     const handlePrintLabel = (device) => {
         setDeviceForLabel(device);
         setIsLabelModalOpen(true);
+    };
+
+    const handlePrintSio = (record) => {
+        const printWindow = window.open('', '_blank', 'width=900,height=750');
+        
+        const itemsRows = record.items.map(item => `
+            <tr>
+                <td style="border: 1px solid #000; padding: 8px; font-family: monospace; font-weight: bold; font-size: 11px;">${item.pcNumber}</td>
+                <td style="border: 1px solid #000; padding: 8px; font-size: 11px;">${item.brand || ''} ${item.pcModel || ''}</td>
+                <td style="border: 1px solid #000; padding: 8px; font-family: monospace; font-size: 11px;">${item.pcSerial || '---'}</td>
+                <td style="border: 1px solid #000; padding: 8px; font-size: 11px;">${item.department || '---'}${item.subCategory ? ` / ${item.subCategory}` : ''}</td>
+                <td style="border: 1px solid #000; padding: 8px; text-align: right; font-weight: bold; font-size: 11px;">${item.quantity}</td>
+            </tr>
+        `).join('');
+
+        const html = `
+            <html>
+            <head>
+                <title>Stores ${record.type?.toUpperCase()} - ${record.docNo}</title>
+                <style>
+                    body {
+                        font-family: Arial, sans-serif;
+                        margin: 0;
+                        padding: 30px;
+                        color: #000;
+                    }
+                    .header-container {
+                        text-align: center;
+                        border-bottom: 2px double #000;
+                        padding-bottom: 12px;
+                        margin-bottom: 30px;
+                    }
+                    .header-title {
+                        font-size: 21px;
+                        font-weight: 900;
+                        text-transform: uppercase;
+                        margin: 0;
+                        letter-spacing: 0.5px;
+                    }
+                    .header-subtitle {
+                        font-size: 16px;
+                        font-weight: bold;
+                        margin: 6px 0 3px 0;
+                    }
+                    .header-address {
+                        font-size: 11px;
+                        margin: 0;
+                        color: #444;
+                        line-height: 1.4;
+                    }
+                    .doc-title {
+                        font-size: 18px;
+                        font-weight: bold;
+                        text-decoration: underline;
+                        text-align: center;
+                        margin: 20px 0;
+                        text-transform: uppercase;
+                        letter-spacing: 1px;
+                    }
+                    .meta-table {
+                        width: 100%;
+                        margin-bottom: 30px;
+                        border-collapse: collapse;
+                    }
+                    .meta-table td {
+                        padding: 7px 5px;
+                        font-size: 12px;
+                        vertical-align: top;
+                    }
+                    .meta-label {
+                        font-weight: bold;
+                        width: 18%;
+                        color: #222;
+                    }
+                    .meta-value {
+                        width: 32%;
+                        border-bottom: 1px dotted #ccc;
+                    }
+                    .items-table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        margin-bottom: 50px;
+                        font-size: 12px;
+                    }
+                    .items-table th {
+                        border: 1px solid #000;
+                        padding: 10px 8px;
+                        background-color: #f5f5f5;
+                        font-weight: bold;
+                        text-align: left;
+                        text-transform: uppercase;
+                        font-size: 10px;
+                        letter-spacing: 0.5px;
+                    }
+                    .sig-section {
+                        margin-top: 80px;
+                        width: 100%;
+                        border-collapse: collapse;
+                    }
+                    .sig-section td {
+                        width: 25%;
+                        text-align: center;
+                        font-size: 11px;
+                        padding-top: 50px;
+                        font-weight: bold;
+                    }
+                    .sig-line {
+                        border-top: 1px solid #000;
+                        width: 85%;
+                        margin: 0 auto 6px auto;
+                    }
+                    @media print {
+                        @page {
+                            size: A4;
+                            margin: 15mm;
+                        }
+                        body {
+                            padding: 0;
+                        }
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="header-container">
+                    <div class="header-title">Asia Broadcasting Corporation (Pvt) Ltd</div>
+                    <div class="header-subtitle">Hiru Life Studio</div>
+                    <div class="header-address">
+                        No. 507-509. Nagahamulla Junction, Pannipitiya Road, Pelawatta<br>
+                        Tel: 0112-22221999
+                    </div>
+                </div>
+
+                <div class="doc-title">Stores ${record.type === 'in' ? 'IN' : 'OUT'}</div>
+
+                <table class="meta-table">
+                    <tr>
+                        <td class="meta-label">Doc No:</td>
+                        <td class="meta-value" style="font-family: monospace; font-weight: bold;">${record.docNo}</td>
+                        <td class="meta-label">Date & Time:</td>
+                        <td class="meta-value">${record.dateStr}</td>
+                    </tr>
+                    <tr>
+                        <td class="meta-label">From:</td>
+                        <td class="meta-value">${record.fromLocation}</td>
+                        <td class="meta-label">To:</td>
+                        <td class="meta-value">${record.toLocation}</td>
+                    </tr>
+                    <tr>
+                        <td class="meta-label">Event Name:</td>
+                        <td class="meta-value">${record.eventName}</td>
+                        <td class="meta-label">Assigned To:</td>
+                        <td class="meta-value">${record.assignedTo}</td>
+                    </tr>
+                    <tr>
+                        <td class="meta-label">EPF Number:</td>
+                        <td class="meta-value">${record.epfNumber}</td>
+                        <td class="meta-label">Created By:</td>
+                        <td class="meta-value">${record.createdBy}</td>
+                    </tr>
+                    <tr>
+                        <td class="meta-label">Picked Up By:</td>
+                        <td class="meta-value">${record.pickedUpBy}</td>
+                        <td class="meta-label">Remarks:</td>
+                        <td class="meta-value">${record.remarks || '---'}</td>
+                    </tr>
+                </table>
+
+                <table class="items-table">
+                    <thead>
+                        <tr>
+                            <th>Barcode</th>
+                            <th>Model</th>
+                            <th>Serial</th>
+                            <th>Category</th>
+                            <th style="text-align: right; width: 80px;">Quantity</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${itemsRows}
+                    </tbody>
+                </table>
+
+                <table class="sig-section">
+                    <tr>
+                        <td>
+                            <div class="sig-line"></div>
+                            Date
+                        </td>
+                        <td>
+                            <div class="sig-line"></div>
+                            Security Officer
+                        </td>
+                        <td>
+                            <div class="sig-line"></div>
+                            Authorized by
+                        </td>
+                        <td>
+                            <div class="sig-line"></div>
+                            Picked up by
+                        </td>
+                    </tr>
+                </table>
+
+                <script>
+                    window.onload = function() {
+                        window.print();
+                        setTimeout(function() { window.close(); }, 500);
+                    };
+                </script>
+            </body>
+            </html>
+        `;
+        
+        printWindow.document.open();
+        printWindow.document.write(html);
+        printWindow.document.close();
     };
 
     const confirmDelete = async () => {
@@ -644,7 +895,24 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4">
-                                                    <span className="text-sm font-bold text-slate-700">{device.quantity ?? 1}</span>
+                                                    <div className="flex flex-col gap-1 items-start">
+                                                        <span className="text-sm font-bold text-slate-700">{device.quantity ?? 1}</span>
+                                                        {currentSite?.id === 'hlse' && (() => {
+                                                            const matchedSios = activeOutSios.filter(sio => sio.items?.some(i => i.id === device.id));
+                                                            if (matchedSios.length === 0) return null;
+                                                            const totalOut = matchedSios.reduce((acc, sio) => acc + (sio.items?.find(i => i.id === device.id)?.quantity || 0), 0);
+                                                            return (
+                                                                <button
+                                                                    onClick={() => setSelectedSioForView(matchedSios[0])}
+                                                                    className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-xl text-[10px] font-black tracking-wide border border-amber-200 transition-colors cursor-pointer mt-1"
+                                                                    title={`Click to view SIO: ${matchedSios[0].docNo}`}
+                                                                >
+                                                                    <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                                                                    {totalOut} Out ({matchedSios[0].eventName})
+                                                                </button>
+                                                            );
+                                                        })()}
+                                                    </div>
                                                 </td>
                                             </>
                                         ) : (
@@ -814,6 +1082,122 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
                                         Delete Forever
                                     </button>
                                 </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* SIO Details Modal from Inventory Dashboard */}
+            <AnimatePresence>
+                {selectedSioForView && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                            className="bg-white w-full max-w-3xl rounded-[32px] shadow-2xl p-8 max-h-[90vh] overflow-y-auto space-y-6 flex flex-col"
+                        >
+                            <div className="flex justify-between items-start pb-4 border-b border-slate-100">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-12 h-12 bg-[#003135]/5 rounded-2xl flex items-center justify-center text-[#003135]">
+                                        <FileText size={22} />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-xl font-black text-[#003135]">{selectedSioForView.docNo}</h3>
+                                        <p className="text-xs text-slate-400 font-semibold">{selectedSioForView.dateStr}</p>
+                                    </div>
+                                </div>
+                                <button onClick={() => setSelectedSioForView(null)} className="p-2 hover:bg-slate-50 rounded-full transition-colors text-slate-400">
+                                    <X size={20} />
+                                </button>
+                            </div>
+
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-6 text-sm flex-1">
+                                <div className="space-y-0.5">
+                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Type</span>
+                                    <span className="inline-flex px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-orange-50 text-orange-600 border border-orange-100">
+                                        OUT (Deduct Stock)
+                                    </span>
+                                </div>
+                                <div className="space-y-0.5">
+                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">From</span>
+                                    <span className="font-bold text-[#003135]">{selectedSioForView.fromLocation}</span>
+                                </div>
+                                <div className="space-y-0.5">
+                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">To</span>
+                                    <span className="font-bold text-[#003135]">{selectedSioForView.toLocation}</span>
+                                </div>
+                                <div className="space-y-0.5">
+                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Event Name</span>
+                                    <span className="font-bold text-[#003135]">{selectedSioForView.eventName}</span>
+                                </div>
+                                <div className="space-y-0.5">
+                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Assigned To</span>
+                                    <span className="font-bold text-[#003135]">{selectedSioForView.assignedTo}</span>
+                                </div>
+                                <div className="space-y-0.5">
+                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">EPF Number</span>
+                                    <span className="font-bold text-[#003135]">{selectedSioForView.epfNumber}</span>
+                                </div>
+                                <div className="space-y-0.5">
+                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Created By</span>
+                                    <span className="font-bold text-[#003135]">{selectedSioForView.createdBy}</span>
+                                </div>
+                                <div className="space-y-0.5">
+                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Picked Up By</span>
+                                    <span className="font-bold text-[#003135]">{selectedSioForView.pickedUpBy}</span>
+                                </div>
+                                <div className="space-y-0.5 col-span-2">
+                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Remarks</span>
+                                    <span className="font-bold text-slate-600">{selectedSioForView.remarks || '---'}</span>
+                                </div>
+                            </div>
+
+                            <div className="space-y-3 pt-4 border-t border-slate-100">
+                                <h4 className="font-black text-[#003135] text-sm tracking-tight uppercase">SIO Items</h4>
+                                <div className="border border-slate-100 rounded-2xl overflow-hidden shadow-sm">
+                                    <table className="w-full text-left">
+                                        <thead className="bg-slate-50/50 text-[10px] font-black text-slate-400 uppercase tracking-wider">
+                                            <tr>
+                                                <th className="px-5 py-3">Barcode</th>
+                                                <th className="px-5 py-3">Model</th>
+                                                <th className="px-5 py-3">Serial</th>
+                                                <th className="px-5 py-3">Category</th>
+                                                <th className="px-5 py-3 text-right">Quantity</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100 text-sm font-bold">
+                                            {selectedSioForView.items?.map((i) => (
+                                                <tr key={i.id}>
+                                                    <td className="px-5 py-2.5 font-mono text-[#003135]">{i.pcNumber}</td>
+                                                    <td className="px-5 py-2.5 text-slate-600">{i.brand} {i.pcModel}</td>
+                                                    <td className="px-5 py-2.5 font-mono text-slate-500">{i.pcSerial || '---'}</td>
+                                                    <td className="px-5 py-2.5 text-slate-500">{i.department || '---'}{i.subCategory ? ` / ${i.subCategory}` : ''}</td>
+                                                    <td className="px-5 py-2.5 text-right text-slate-700">{i.quantity}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-slate-400">
+                                <span>Decision: <span className="uppercase font-black text-emerald-600">{selectedSioForView.status}</span></span>
+                                <span>Handled By: <span className="text-slate-600 font-black">{selectedSioForView.approvedBy}</span></span>
+                            </div>
+
+                            <div className="pt-4 flex justify-end gap-3 border-t border-slate-100 bg-slate-50/50 p-4 -mx-8 -mb-8 rounded-b-[32px]">
+                                <button
+                                    onClick={() => handlePrintSio(selectedSioForView)}
+                                    className="px-5 py-3 bg-slate-100 text-[#003135] hover:bg-slate-200 rounded-2xl font-bold flex items-center gap-1.5 transition-all mr-auto"
+                                >
+                                    <Printer size={16} />
+                                    Print Document
+                                </button>
+                                <button onClick={() => setSelectedSioForView(null)} className="px-6 py-3 bg-slate-200 hover:bg-slate-300 text-[#003135] rounded-2xl font-bold transition-all">
+                                    Close
+                                </button>
                             </div>
                         </motion.div>
                     </div>

@@ -19,6 +19,8 @@ export const PERMISSIONS = [
     { key: 'hlse_canAdd',            label: 'Life Studio Equipments: Add Items',        description: 'Can add items in Life Studio Equipments' },
     { key: 'hlse_canEdit',           label: 'Life Studio Equipments: Edit Items',       description: 'Can edit items in Life Studio Equipments' },
     { key: 'hlse_canDelete',         label: 'Life Studio Equipments: Delete Items',     description: 'Can delete items in Life Studio Equipments' },
+    { key: 'hlse_canCreateSIO',      label: 'Life Studio Equipments: Create SIO',       description: 'Can create SIO forms in Life Studio Equipments' },
+    { key: 'hlse_canApproveSIO',     label: 'Life Studio Equipments: Approve SIO',      description: 'Can approve SIO forms in Life Studio Equipments' },
 
     { key: 'canViewLogs',           label: 'View Activity Logs',    description: 'Can view the activity log history' },
     { key: 'canManageDepartments',  label: 'Manage Departments',    description: 'Can add / edit / remove departments' },
@@ -44,6 +46,8 @@ export const DEFAULT_PERMISSIONS = {
     hlse_canAdd:            false,
     hlse_canEdit:           false,
     hlse_canDelete:         false,
+    hlse_canCreateSIO:      false,
+    hlse_canApproveSIO:     false,
     canViewLogs:            false,
     canManageDepartments:   false,
     manage_wtc:             false,
@@ -62,24 +66,29 @@ export function hasPermission(user, key, site = null) {
     // Super Admin has full access to EVERYTHING
     if (user.isSuperAdmin) return true;
 
+    const siteId = site?.id || '';
+
     // Admin has access to site-prefixed actions if they have specific site management permission
     if (user.isAdmin) {
         // If checking for user management capabilities
-        if (key === 'manage_wtc' || key === 'manage_hls') {
+        if (key === 'manage_wtc' || key === 'manage_hls' || key === 'manage_hlse') {
             return user.permissions?.[key] === true;
         }
+
+        // If a site context is provided, they are a site admin only if they have manage_[siteId]
+        if (siteId) {
+            return user.permissions?.[`manage_${siteId}`] === true;
+        }
         
-        // Admins pass all other checks by default (legacy behavior for non-user management)
-        // Except for explicit Super Admin only actions (if any added later)
+        // Fallback for legacy admin
         return true;
     }
     
-    // If it's a site-aware action (add/edit/delete)
-    if (site && (key === 'canAdd' || key === 'canEdit' || key === 'canDelete')) {
+    // If it's a site-aware action
+    if (site && (key === 'canAdd' || key === 'canEdit' || key === 'canDelete' || key === 'canCreateSIO' || key === 'canApproveSIO')) {
         const sitePrefixedKey = `${site.id}_${key}`;
         return user.permissions?.[sitePrefixedKey] === true;
     }
 
     return user.permissions?.[key] === true;
 }
-
