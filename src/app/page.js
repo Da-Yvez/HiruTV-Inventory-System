@@ -11,6 +11,7 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import InventoryTable from '@/components/inventory/InventoryTable';
 import ActivityLogs from '@/components/inventory/ActivityLogs';
 import DepartmentManagement from '@/components/settings/DepartmentManagement';
+import PickupManagement from '@/components/settings/PickupManagement';
 import UserManagement from '@/components/users/UserManagement';
 import QRSecurity from '@/components/settings/QRSecurity';
 import SystemLogs from '@/components/settings/SystemLogs';
@@ -133,6 +134,10 @@ export default function Home() {
         ) : activeSection === 'departments' ? (
           hasPermission(user, 'canManageDepartments') ? (
             <DepartmentManagement />
+          ) : <AccessDenied />
+        ) : activeSection === 'pickups' ? (
+          hasPermission(user, 'canManageDepartments') ? (
+            <PickupManagement />
           ) : <AccessDenied />
         ) : (
           <ComingSoon onBack={() => handleSectionChange('inventory')} />

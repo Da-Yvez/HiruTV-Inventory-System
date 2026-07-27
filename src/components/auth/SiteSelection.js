@@ -45,6 +45,15 @@ const SiteSelection = ({ onOpenSettings }) => {
         }
     };
 
+    const handleSelectSite = async (siteId) => {
+        try {
+            const { addLog } = await import('@/lib/utils');
+            const targetSite = siteConfig[siteId];
+            await addLog(targetSite, user, 'User Login', `User signed into workspace: ${targetSite.fullName}`);
+        } catch (_) {}
+        selectSite(siteId);
+    };
+
     return (
         <div className="relative min-h-screen w-full overflow-hidden bg-black flex items-center justify-center p-6">
             {/* ── Animated Hills Background ── */}
@@ -85,7 +94,7 @@ const SiteSelection = ({ onOpenSettings }) => {
                             variants={item}
                             whileHover={canAccess ? { scale: 1.02, y: -8 } : {}}
                             whileTap={canAccess ? { scale: 0.98 } : {}}
-                            onClick={() => canAccess && selectSite(site.id)}
+                            onClick={() => canAccess && handleSelectSite(site.id)}
                             className={`relative group ${canAccess ? 'cursor-pointer' : 'cursor-not-allowed opacity-40'}`}
                         >
                             {/* Card Glow — only for accessible sites */}

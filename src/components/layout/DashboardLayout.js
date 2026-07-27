@@ -54,6 +54,7 @@ const DashboardLayout = ({ children, activeSection, onSectionChange, isSystemMod
     // Settings nav — gated by permission
     const settingsMenuItems = isSystemMode ? [] : [
         { id: 'departments', label: currentSite?.id === 'hlse' ? 'Categories' : 'Departments', icon: <Settings size={20} />, show: hasPermission(user, 'canManageDepartments') },
+        { id: 'pickups', label: 'Pickup Users', icon: <Users size={20} />, show: currentSite?.id === 'hlse' && hasPermission(user, 'canManageDepartments') },
     ].filter(item => item.show);
 
     const NavItem = ({ item }) => {

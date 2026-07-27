@@ -1167,14 +1167,32 @@ const StoresInOut = ({ activeSection = 'storesInOut_active' }) => {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="space-y-1">
                                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Picked Up By *</label>
-                                        <input 
-                                            required 
-                                            disabled={type === 'in'}
-                                            value={pickedUpBy} 
-                                            onChange={(e) => setPickedUpBy(e.target.value)} 
-                                            placeholder="e.g. Gayan" 
-                                            className="w-full px-5 py-3 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:outline-none focus:border-[#003135] focus:bg-white transition-all font-bold text-[#003135] disabled:bg-slate-100 disabled:text-slate-500" 
-                                        />
+                                        {currentSite?.pickupUsers && currentSite.pickupUsers.length > 0 ? (
+                                            <select
+                                                required
+                                                disabled={type === 'in'}
+                                                value={pickedUpBy}
+                                                onChange={(e) => setPickedUpBy(e.target.value)}
+                                                className="w-full px-5 py-3 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:outline-none focus:border-[#003135] focus:bg-white transition-all font-bold text-[#003135] disabled:bg-slate-100 disabled:text-slate-500"
+                                            >
+                                                <option value="">-- Select Pickup Person --</option>
+                                                {currentSite.pickupUsers.map(p => {
+                                                    const formatted = `${p.name} (${p.epf ? p.epf : p.nic})`;
+                                                    return (
+                                                        <option key={p.id} value={formatted}>{formatted}</option>
+                                                    );
+                                                })}
+                                            </select>
+                                        ) : (
+                                            <input 
+                                                required 
+                                                disabled={type === 'in'}
+                                                value={pickedUpBy} 
+                                                onChange={(e) => setPickedUpBy(e.target.value)} 
+                                                placeholder="e.g. Gayan" 
+                                                className="w-full px-5 py-3 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:outline-none focus:border-[#003135] focus:bg-white transition-all font-bold text-[#003135] disabled:bg-slate-100 disabled:text-slate-500" 
+                                            />
+                                        )}
                                     </div>
                                     <div className="space-y-1">
                                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Remarks</label>

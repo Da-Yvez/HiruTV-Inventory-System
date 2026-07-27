@@ -105,3 +105,62 @@ export async function POST(request) {
         return NextResponse.json({ error: error.message }, { status: 500 });
     }
 }
+
+export async function DELETE(request) {
+    try {
+        const authHeader = request.headers.get('Authorization');
+        if (!authHeader?.startsWith('Bearer ')) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
+        const token = authHeader.substring(7);
+        const decoded = await adminAuth.verifyIdToken(token);
+
+        // Check if the user is a Super Admin
+        const userDoc = await adminDb.collection('users').doc(decoded.uid).get();
+        if (!userDoc.exists || !userDoc.data().isSuperAdmin) {
+            return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+        }
+
+        const { searchParams } = new URL(request.url);
+        const logsCollection = searchParams.get('collection');
+        const startDateStr = searchParams.get('startDate');
+        const endDateStr = searchParams.get('endDate');
+
+        if (!logsCollection) {
+            return NextResponse.json({ error: 'Missing ?collection= param' }, { status: 400 });
+        }
+
+        // Only allow deleting specific activity logs
+        const allowedCollections = ['activityLogs_hlse', 'activityLogs_wtc', 'activityLogs_hls', 'systemLogs'];
+        if (!allowedCollections.includes(logsCollection)) {
+            return NextResponse.json({ error: 'Invalid collection for deletion' }, { status: 400 });
+        }
+
+        // Build Firebase query
+        let query = adminDb.collection(logsCollection);
+
+        if (startDateStr) {
+            const start = new Date(startDateStr);
+            query = query.where('timestamp', '>=', start);
+        }
+        if (endDateStr) {
+            const end = new Date(endDateStr);
+            query = query.where('timestamp', '<=', end);
+        }
+
+        const snapshot = await query.get();
+        
+        // Batch delete
+        const batch = adminDb.batch();
+        snapshot.docs.forEach(doc => {
+            batch.delete(doc.ref);
+        });
+        await batch.commit();
+
+        return NextResponse.json({ success: true, count: snapshot.size });
+    } catch (error) {
+        console.error('[LOGS API DELETE] Critical Error:', error.message);
+        return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+}
