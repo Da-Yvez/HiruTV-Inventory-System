@@ -136,7 +136,7 @@ export default function Home() {
             <DepartmentManagement />
           ) : <AccessDenied />
         ) : activeSection === 'pickups' ? (
-          hasPermission(user, 'canManageDepartments') ? (
+          hasPermission(user, 'manage_hlse') ? (
             <PickupManagement />
           ) : <AccessDenied />
         ) : (
