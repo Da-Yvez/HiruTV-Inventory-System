@@ -27,18 +27,21 @@ const app = initializeApp({ credential: cert(serviceAccount) });
 const adminDb = getFirestore(app);
 
 async function main() {
-    console.log(`\n🔍 Updating Branding for 'hls' site...`);
+    console.log(`\n🔍 Updating Branding for 'hls' and 'hlse' sites...`);
 
-    const siteRef = adminDb.collection('sites').doc('hls');
-    
-    await siteRef.set({
-        name: "Life Studio",
-        fullName: "Hiru Life Studio"
+    const hlsRef = adminDb.collection('sites').doc('hls');
+    await hlsRef.set({
+        fullName: "Hiru Life Studios IT"
     }, { merge: true });
 
-    console.log(`\n🎉 Success! 'hls' site updated in Firestore.`);
-    console.log('   Name: Life Studio');
-    console.log('   Full Name: Hiru Life Studio\n');
+    const hlseRef = adminDb.collection('sites').doc('hlse');
+    await hlseRef.set({
+        fullName: "Hiru Life Studios Equipments"
+    }, { merge: true });
+
+    console.log(`\n🎉 Success! Firestore site names updated.`);
+    console.log('   hls fullName: Hiru Life Studios IT');
+    console.log('   hlse fullName: Hiru Life Studios Equipments\n');
 
     process.exit(0);
 }

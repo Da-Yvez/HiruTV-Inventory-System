@@ -24,7 +24,7 @@ export async function PATCH(request, { params }) {
 
     const { uid } = await params;
     const body = await request.json();
-    const { displayName, isAdmin, isSuperAdmin, permissions } = body;
+    const { displayName, epfNumber, isAdmin, isSuperAdmin, permissions } = body;
 
     // Fetch target user to check their current role
     const targetDoc = await adminDb.collection('users').doc(uid).get();
@@ -77,6 +77,9 @@ export async function PATCH(request, { params }) {
     if (displayName !== undefined) {
         firestoreUpdate.displayName = displayName;
         authUpdate.displayName = displayName;
+    }
+    if (epfNumber !== undefined) {
+        firestoreUpdate.epfNumber = epfNumber;
     }
     if (isAdmin !== undefined) firestoreUpdate.isAdmin = isAdmin;
     if (isSuperAdmin !== undefined) firestoreUpdate.isSuperAdmin = isSuperAdmin;

@@ -312,14 +312,16 @@ const StoresInOut = ({ activeSection = 'storesInOut_active' }) => {
         setIsCreateOpen(true);
     };
 
-    // Delete Record (only for pending documents)
+    // Delete Record (only for pending documents, unless user is Super Admin)
     const handleDeleteRecord = async (record) => {
-        if (record.status !== 'pending') {
-            alert("Only SIO forms with PENDING status can be deleted.");
+        const isSuperAdminUser = user?.isSuperAdmin === true;
+        
+        if (record.status !== 'pending' && !isSuperAdminUser) {
+            alert("Only Super Administrators can delete non-pending SIO forms.");
             return;
         }
 
-        const confirmMsg = `Are you sure you want to delete SIO Form ${record.docNo}?`;
+        const confirmMsg = `Are you sure you want to delete SIO Form ${record.docNo}? Warning: This will permanently remove the transaction record.`;
         if (!window.confirm(confirmMsg)) return;
 
         try {
@@ -330,7 +332,7 @@ const StoresInOut = ({ activeSection = 'storesInOut_active' }) => {
                 currentSite, 
                 user, 
                 'SIO Deleted', 
-                `Deleted pending SIO Form: ${record.docNo}`
+                `Deleted SIO Form: ${record.docNo} (Status: ${record.status})`
             );
         } catch (error) {
             console.error("Error deleting SIO record:", error);
@@ -591,7 +593,7 @@ const StoresInOut = ({ activeSection = 'storesInOut_active' }) => {
 
             await updateDoc(docRef, {
                 status: finalStatus,
-                approvedBy: user?.displayName || user?.email || 'Unknown User',
+                approvedBy: user?.displayName ? (user.epfNumber ? `${user.displayName} (${user.epfNumber})` : user.displayName) : (user?.email || 'Unknown User'),
                 approvedAt: serverTimestamp()
             });
 
@@ -731,7 +733,7 @@ const StoresInOut = ({ activeSection = 'storesInOut_active' }) => {
             <body>
                 <div class="header-container">
                     <div class="header-title">Asia Broadcasting Corporation (Pvt) Ltd</div>
-                    <div class="header-subtitle">Hiru Life Studio</div>
+                    <div class="header-subtitle">Hiru Life Studios</div>
                     <div class="header-address">
                         No. 507-509. Nagahamulla Junction, Pannipitiya Road, Pelawatta<br>
                         Tel: 0112-22221999
@@ -771,6 +773,12 @@ const StoresInOut = ({ activeSection = 'storesInOut_active' }) => {
                         <td class="meta-label">Remarks:</td>
                         <td class="meta-value">${record.remarks || '---'}</td>
                     </tr>
+                    ${record.approvedBy ? `
+                    <tr>
+                        <td class="meta-label">Approved By:</td>
+                        <td class="meta-value" colspan="3" style="font-weight: bold;">${record.approvedBy}</td>
+                    </tr>
+                    ` : ''}
                 </table>
 
                 <table class="items-table">
@@ -791,18 +799,24 @@ const StoresInOut = ({ activeSection = 'storesInOut_active' }) => {
                 <table class="sig-section">
                     <tr>
                         <td>
+                            <div style="height: 20px;"></div>
                             <div class="sig-line"></div>
                             Date
                         </td>
                         <td>
+                            <div style="height: 20px;"></div>
                             <div class="sig-line"></div>
                             Security Officer
                         </td>
                         <td>
+                            <div style="font-family: Arial, sans-serif; font-size: 13px; font-weight: bold; margin-bottom: 3px; height: 17px; text-transform: capitalize;">
+                                ${record.approvedBy ? record.approvedBy.split(' ')[0].split('(')[0] : ''}
+                            </div>
                             <div class="sig-line"></div>
                             Authorized by
                         </td>
                         <td>
+                            <div style="height: 20px;"></div>
                             <div class="sig-line"></div>
                             Picked up by
                         </td>
@@ -919,6 +933,9 @@ const StoresInOut = ({ activeSection = 'storesInOut_active' }) => {
                                 <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">From</th>
                                 <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">To</th>
                                 <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">Created By</th>
+                                {(activeSection === 'storesInOut_outside' || activeSection === 'storesInOut_completed') && (
+                                    <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">Approved By</th>
+                                )}
                                 <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">Status</th>
                                 <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
                             </tr>
@@ -926,7 +943,7 @@ const StoresInOut = ({ activeSection = 'storesInOut_active' }) => {
                         <tbody className="divide-y divide-slate-100">
                             {filteredRecords.length === 0 ? (
                                 <tr>
-                                    <td colSpan="9" className="py-20 text-center text-slate-400 font-bold">
+                                    <td colSpan={(activeSection === 'storesInOut_outside' || activeSection === 'storesInOut_completed') ? 10 : 9} className="py-20 text-center text-slate-400 font-bold">
                                         No records found.
                                     </td>
                                 </tr>
@@ -946,6 +963,9 @@ const StoresInOut = ({ activeSection = 'storesInOut_active' }) => {
                                         <td className="px-6 py-4 text-sm font-medium text-slate-600">{r.fromLocation}</td>
                                         <td className="px-6 py-4 text-sm font-medium text-slate-600">{r.toLocation}</td>
                                         <td className="px-6 py-4 text-sm font-bold text-slate-600">{r.createdBy}</td>
+                                        {(activeSection === 'storesInOut_outside' || activeSection === 'storesInOut_completed') && (
+                                            <td className="px-6 py-4 text-sm font-bold text-slate-600">{r.approvedBy || '---'}</td>
+                                        )}
                                         <td className="px-6 py-4">
                                             <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border
                                                 ${r.status === 'completed' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : ''}
@@ -985,24 +1005,28 @@ const StoresInOut = ({ activeSection = 'storesInOut_active' }) => {
                                                     </button>
                                                 )}
 
-                                                {/* Only allow edit and delete if status is pending, in active view, and has create permissions */}
+                                                {/* Only allow edit if status is pending, in active view, and has create permissions */}
                                                 {activeSection === 'storesInOut_active' && r.status === 'pending' && hasPermission(user, 'canCreateSIO', currentSite) && (
-                                                    <>
-                                                        <button
-                                                            onClick={() => handleOpenEdit(r)}
-                                                            className="p-2 bg-slate-50 text-amber-600 hover:bg-amber-50 rounded-xl transition-all"
-                                                            title="Edit Form"
-                                                        >
-                                                            <Edit2 size={15} />
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleDeleteRecord(r)}
-                                                            className="p-2 bg-slate-50 text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
-                                                            title="Delete Form"
-                                                        >
-                                                            <Trash2 size={15} />
-                                                        </button>
-                                                    </>
+                                                    <button
+                                                        onClick={() => handleOpenEdit(r)}
+                                                        className="p-2 bg-slate-50 text-amber-600 hover:bg-amber-50 rounded-xl transition-all"
+                                                        title="Edit Form"
+                                                    >
+                                                        <Edit2 size={15} />
+                                                    </button>
+                                                )}
+
+                                                {/* Allow delete if it's pending (for operators), OR if the user is a Super Administrator (for any status) */}
+                                                {((activeSection === 'storesInOut_active' && r.status === 'pending' && hasPermission(user, 'canCreateSIO', currentSite)) ||
+                                                  user?.isSuperAdmin === true
+                                                 ) && (
+                                                    <button
+                                                        onClick={() => handleDeleteRecord(r)}
+                                                        className="p-2 bg-slate-50 text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
+                                                        title="Delete Form"
+                                                    >
+                                                        <Trash2 size={15} />
+                                                    </button>
                                                 )}
                                             </div>
                                         </td>
@@ -1350,6 +1374,12 @@ const StoresInOut = ({ activeSection = 'storesInOut_active' }) => {
                                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Picked Up By</span>
                                     <span className="font-bold text-[#003135]">{selectedRecord.pickedUpBy}</span>
                                 </div>
+                                {selectedRecord.approvedBy && (
+                                    <div className="space-y-0.5">
+                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Approved By</span>
+                                        <span className="font-bold text-emerald-600">{selectedRecord.approvedBy}</span>
+                                    </div>
+                                )}
                                 {selectedRecord.type === 'in' && selectedRecord.linkedOutDocNo && (
                                     <div className="space-y-0.5">
                                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Linked OUT SIO</span>

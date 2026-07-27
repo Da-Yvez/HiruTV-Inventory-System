@@ -303,7 +303,7 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
             <body>
                 <div class="header-container">
                     <div class="header-title">Asia Broadcasting Corporation (Pvt) Ltd</div>
-                    <div class="header-subtitle">Hiru Life Studio</div>
+                    <div class="header-subtitle">Hiru Life Studios</div>
                     <div class="header-address">
                         No. 507-509. Nagahamulla Junction, Pannipitiya Road, Pelawatta<br>
                         Tel: 0112-22221999
@@ -343,6 +343,12 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
                         <td class="meta-label">Remarks:</td>
                         <td class="meta-value">${record.remarks || '---'}</td>
                     </tr>
+                    ${record.approvedBy ? `
+                    <tr>
+                        <td class="meta-label">Approved By:</td>
+                        <td class="meta-value" colspan="3" style="font-weight: bold;">${record.approvedBy}</td>
+                    </tr>
+                    ` : ''}
                 </table>
 
                 <table class="items-table">
@@ -363,18 +369,24 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
                 <table class="sig-section">
                     <tr>
                         <td>
+                            <div style="height: 20px;"></div>
                             <div class="sig-line"></div>
                             Date
                         </td>
                         <td>
+                            <div style="height: 20px;"></div>
                             <div class="sig-line"></div>
                             Security Officer
                         </td>
                         <td>
+                            <div style="font-family: Arial, sans-serif; font-size: 13px; font-weight: bold; margin-bottom: 3px; height: 17px; text-transform: capitalize;">
+                                ${record.approvedBy ? record.approvedBy.split(' ')[0].split('(')[0] : ''}
+                            </div>
                             <div class="sig-line"></div>
                             Authorized by
                         </td>
                         <td>
+                            <div style="height: 20px;"></div>
                             <div class="sig-line"></div>
                             Picked up by
                         </td>
@@ -1148,6 +1160,12 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
                                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Picked Up By</span>
                                     <span className="font-bold text-[#003135]">{selectedSioForView.pickedUpBy}</span>
                                 </div>
+                                {selectedSioForView.approvedBy && (
+                                    <div className="space-y-0.5">
+                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Approved By</span>
+                                        <span className="font-bold text-emerald-600">{selectedSioForView.approvedBy}</span>
+                                    </div>
+                                )}
                                 <div className="space-y-0.5 col-span-2">
                                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Remarks</span>
                                     <span className="font-bold text-slate-600">{selectedSioForView.remarks || '---'}</span>

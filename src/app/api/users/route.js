@@ -90,7 +90,7 @@ export async function POST(request) {
         return e.message === 'FORBIDDEN' ? forbidden() : unauthorized();
     }
 
-    const { email, password, displayName, isAdmin = false, isSuperAdmin = false, permissions = {} } = await request.json();
+    const { email, password, displayName, epfNumber = '', isAdmin = false, isSuperAdmin = false, permissions = {} } = await request.json();
 
     if (!email || !password || !displayName) {
         return Response.json({ error: 'email, password, and displayName are required' }, { status: 400 });
@@ -156,6 +156,7 @@ export async function POST(request) {
         uid: authUser.uid,
         email,
         displayName,
+        epfNumber,
         isAdmin,
         isSuperAdmin,
         permissions: mergedPermissions,

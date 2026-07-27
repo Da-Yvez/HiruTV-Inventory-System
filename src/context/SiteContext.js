@@ -23,7 +23,7 @@ export const siteConfig = {
     hls: {
         id: 'hls',
         name: "HLS IT",
-        fullName: "Hiru Life Studio IT",
+        fullName: "Hiru Life Studios IT",
         icon: "Globe",
         technicians: ["Navendra"],
         departments: ["Programming", "Camera", "Managers", "Edit", "Graphic", "Secatry", "Dubbing", "Engineering", "IT", "HR"],
@@ -35,7 +35,7 @@ export const siteConfig = {
     hlse: {
         id: 'hlse',
         name: "HLS Equipments",
-        fullName: "Hiru Life Studio Equipments",
+        fullName: "Hiru Life Studios Equipments",
         icon: "Cpu",
         technicians: ["Navendra"],
         departments: ["Camera", "Tripod", "Mic", "Lighting", "Audio Mixer", "Lenses", "Cables", "Adapters", "Monitors", "Batteries"],

@@ -10,6 +10,7 @@ export default function UserFormModal({ mode, user, onClose, onSuccess }) {
     const isEdit = mode === 'edit';
 
     const [displayName, setDisplayName] = useState(user?.displayName || '');
+    const [epfNumber, setEpfNumber] = useState(user?.epfNumber || '');
     const [email, setEmail] = useState(user?.email || '');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -68,7 +69,7 @@ export default function UserFormModal({ mode, user, onClose, onSuccess }) {
         try {
             const token = await getAuthToken();
 
-            const payload = { displayName, isAdmin, isSuperAdmin, permissions };
+            const payload = { displayName, epfNumber, isAdmin, isSuperAdmin, permissions };
             if (!isEdit) {
                 payload.email = email;
                 payload.password = password;
@@ -163,6 +164,20 @@ export default function UserFormModal({ mode, user, onClose, onSuccess }) {
                             onChange={e => setDisplayName(e.target.value)}
                             required
                             placeholder="e.g. Navindra"
+                            className="w-full border border-[#D1DDDE] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#00A3A8]/40 focus:border-[#00A3A8] transition-all"
+                        />
+                    </div>
+
+                    {/* EPF Number */}
+                    <div>
+                        <label className="block text-xs font-bold text-[#003135] uppercase tracking-wider mb-1.5">
+                            EPF Number
+                        </label>
+                        <input
+                            type="text"
+                            value={epfNumber}
+                            onChange={e => setEpfNumber(e.target.value)}
+                            placeholder="e.g. 1234"
                             className="w-full border border-[#D1DDDE] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#00A3A8]/40 focus:border-[#00A3A8] transition-all"
                         />
                     </div>
