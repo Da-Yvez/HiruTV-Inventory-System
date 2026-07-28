@@ -167,9 +167,9 @@ export default function UserFormModal({ mode, user, onClose, onSuccess }) {
             />
 
             {/* Modal */}
-            <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto">
+            <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-5xl h-[90vh] md:h-[85vh] overflow-hidden flex flex-col">
                 {/* Header */}
-                <div className="sticky top-0 bg-white border-b border-[#D1DDDE] px-6 py-5 flex items-center justify-between rounded-t-2xl z-10">
+                <div className="bg-white border-b border-[#D1DDDE] px-6 py-5 flex items-center justify-between z-10 shrink-0">
                     <div>
                         <h2 className="text-xl font-black text-[#003135]">
                             {isEdit ? 'Edit User' : 'Add New User'}
@@ -186,317 +186,344 @@ export default function UserFormModal({ mode, user, onClose, onSuccess }) {
                     </button>
                 </div>
 
-                <form onSubmit={handleSubmit} className="p-6 space-y-5">
+                <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
                     {/* Error */}
                     {error && (
-                        <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-xl font-medium">
-                            {error}
-                        </div>
-                    )}
-
-                    {/* Display Name */}
-                    <div>
-                        <label className="block text-xs font-bold text-[#003135] uppercase tracking-wider mb-1.5">
-                            Display Name
-                        </label>
-                        <input
-                            type="text"
-                            value={displayName}
-                            onChange={e => setDisplayName(e.target.value)}
-                            required
-                            placeholder="e.g. Navindra"
-                            className="w-full border border-[#D1DDDE] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#00A3A8]/40 focus:border-[#00A3A8] transition-all"
-                        />
-                    </div>
-
-                    {/* EPF Number */}
-                    <div>
-                        <label className="block text-xs font-bold text-[#003135] uppercase tracking-wider mb-1.5">
-                            EPF Number
-                        </label>
-                        <input
-                            type="text"
-                            value={epfNumber}
-                            onChange={e => setEpfNumber(e.target.value)}
-                            placeholder="e.g. 1234"
-                            className="w-full border border-[#D1DDDE] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#00A3A8]/40 focus:border-[#00A3A8] transition-all"
-                        />
-                    </div>
-
-                    {/* Email — only on create */}
-                    {!isEdit && (
-                        <div>
-                            <label className="block text-xs font-bold text-[#003135] uppercase tracking-wider mb-1.5">
-                                Email Address
-                            </label>
-                            <input
-                                type="email"
-                                value={email}
-                                onChange={e => setEmail(e.target.value)}
-                                required
-                                placeholder="user@inventory.system"
-                                className="w-full border border-[#D1DDDE] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#00A3A8]/40 focus:border-[#00A3A8] transition-all"
-                            />
-                        </div>
-                    )}
-
-                    {/* Password — only on create */}
-                    {!isEdit && (
-                        <div>
-                            <label className="block text-xs font-bold text-[#003135] uppercase tracking-wider mb-1.5">
-                                Initial Password
-                            </label>
-                            <div className="relative">
-                                <input
-                                    type={showPassword ? 'text' : 'password'}
-                                    value={password}
-                                    onChange={e => setPassword(e.target.value)}
-                                    required
-                                    minLength={6}
-                                    placeholder="Minimum 6 characters"
-                                    className="w-full border border-[#D1DDDE] rounded-xl px-4 py-2.5 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-[#00A3A8]/40 focus:border-[#00A3A8] transition-all"
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                                >
-                                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                                </button>
+                        <div className="px-6 pt-4 shrink-0">
+                            <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-xl font-medium">
+                                {error}
                             </div>
                         </div>
                     )}
 
-                    {/* Roles Toggles (Only for Super Admin) */}
-                    {(currentUser.isSuperAdmin) && (
-                        <div className="space-y-4">
-                            <label className="block text-xs font-bold text-[#003135] uppercase tracking-wider mb-1">
-                                System Roles
-                            </label>
+                    <div className="flex-1 overflow-y-auto p-6">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
                             
-                            {/* Super Admin Toggle */}
-                            <div className="flex items-center justify-between bg-purple-50 border border-purple-200 rounded-xl px-4 py-3">
-                                <div className="flex items-center gap-2">
-                                    <ShieldCheck size={18} className="text-purple-600" />
-                                    <div>
-                                        <p className="text-sm font-bold text-purple-800">Super Administrator</p>
-                                        <p className="text-xs text-purple-600">Top-level control over all users and sites</p>
+                            {/* Left Column: Basic Info & Roles */}
+                            <div className="space-y-6">
+                                <div className="space-y-4">
+                                    <div className="flex items-center gap-2">
+                                        <Shield size={16} className="text-[#00A3A8]" />
+                                        <h3 className="text-sm font-black text-[#003135] uppercase tracking-wider">Basic Information</h3>
                                     </div>
-                                </div>
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        const newVal = !isSuperAdmin;
-                                        setIsSuperAdmin(newVal);
-                                        if (newVal) setIsAdmin(true);
-                                    }}
-                                    className={`relative w-11 h-6 rounded-full transition-colors duration-200 ${isSuperAdmin ? 'bg-purple-500' : 'bg-slate-200'}`}
-                                >
-                                    <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${isSuperAdmin ? 'translate-x-5' : ''}`} />
-                                </button>
-                            </div>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        {/* Display Name */}
+                                        <div>
+                                            <label className="block text-xs font-bold text-[#003135] uppercase tracking-wider mb-1.5">
+                                                Display Name
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={displayName}
+                                                onChange={e => setDisplayName(e.target.value)}
+                                                required
+                                                placeholder="e.g. Navindra"
+                                                className="w-full border border-[#D1DDDE] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#00A3A8]/40 focus:border-[#00A3A8] transition-all"
+                                            />
+                                        </div>
 
-                            {/* Admin Toggle */}
-                            <div className="flex items-center justify-between bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
-                                <div className="flex items-center gap-2">
-                                    <ShieldCheck size={18} className="text-amber-600" />
-                                    <div>
-                                        <p className="text-sm font-bold text-amber-800">Administrator</p>
-                                        <p className="text-xs text-amber-600">Can manage users for specific sites</p>
-                                    </div>
-                                </div>
-                                <button
-                                    type="button"
-                                    disabled={isSuperAdmin}
-                                    onClick={() => {
-                                        const newVal = !isAdmin;
-                                        setIsAdmin(newVal);
-                                        // If turning off admin, also turn off management perms
-                                        if (!newVal) {
-                                            setPermissions(prev => ({ 
-                                                ...prev, 
-                                                manage_wtc: false, 
-                                                manage_hls: false,
-                                                manage_hlse: false
-                                            }));
-                                        }
-                                    }}
-                                    className={`relative w-11 h-6 rounded-full transition-colors duration-200 ${isAdmin ? 'bg-amber-500' : 'bg-slate-200'} ${isSuperAdmin ? 'opacity-50' : ''}`}
-                                >
-                                    <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${isAdmin ? 'translate-x-5' : ''}`} />
-                                </button>
-                            </div>
+                                        {/* EPF Number */}
+                                        <div>
+                                            <label className="block text-xs font-bold text-[#003135] uppercase tracking-wider mb-1.5">
+                                                EPF Number
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={epfNumber}
+                                                onChange={e => setEpfNumber(e.target.value)}
+                                                placeholder="e.g. 1234"
+                                                className="w-full border border-[#D1DDDE] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#00A3A8]/40 focus:border-[#00A3A8] transition-all"
+                                            />
+                                        </div>
 
-                            {/* Management Permissions (Nested under Admin) */}
-                            {isAdmin && !isSuperAdmin && (
-                                <div className="pl-4 border-l-2 border-amber-100 space-y-2 mt-2">
-                                    {visiblePermissions.filter(p => p.key.startsWith('manage_')).map(perm => (
-                                        <div key={perm.key} className="flex items-center justify-between py-1">
+                                        {/* Email — only on create */}
+                                        {!isEdit && (
                                             <div>
-                                                <p className="text-xs font-bold text-amber-900">{perm.label}</p>
-                                                <p className="text-[10px] text-amber-600">Grants full site control</p>
+                                                <label className="block text-xs font-bold text-[#003135] uppercase tracking-wider mb-1.5">
+                                                    Email Address
+                                                </label>
+                                                <input
+                                                    type="email"
+                                                    value={email}
+                                                    onChange={e => setEmail(e.target.value)}
+                                                    required
+                                                    placeholder="user@inventory.system"
+                                                    className="w-full border border-[#D1DDDE] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#00A3A8]/40 focus:border-[#00A3A8] transition-all"
+                                                />
+                                            </div>
+                                        )}
+
+                                        {/* Password — only on create */}
+                                        {!isEdit && (
+                                            <div>
+                                                <label className="block text-xs font-bold text-[#003135] uppercase tracking-wider mb-1.5">
+                                                    Initial Password
+                                                </label>
+                                                <div className="relative">
+                                                    <input
+                                                        type={showPassword ? 'text' : 'password'}
+                                                        value={password}
+                                                        onChange={e => setPassword(e.target.value)}
+                                                        required
+                                                        minLength={6}
+                                                        placeholder="Minimum 6 characters"
+                                                        className="w-full border border-[#D1DDDE] rounded-xl px-4 py-2.5 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-[#00A3A8]/40 focus:border-[#00A3A8] transition-all"
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setShowPassword(!showPassword)}
+                                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                                                    >
+                                                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Roles Toggles (Only for Super Admin) */}
+                                {currentUser.isSuperAdmin && (
+                                    <div className="space-y-4">
+                                        <div className="flex items-center gap-2">
+                                            <ShieldCheck size={16} className="text-[#00A3A8]" />
+                                            <h3 className="text-sm font-black text-[#003135] uppercase tracking-wider">System Roles</h3>
+                                        </div>
+                                        
+                                        {/* Super Admin Toggle */}
+                                        <div className="flex items-center justify-between bg-purple-50 border border-purple-200 rounded-xl px-4 py-3">
+                                            <div className="flex items-center gap-2">
+                                                <ShieldCheck size={18} className="text-purple-600" />
+                                                <div>
+                                                    <p className="text-sm font-bold text-purple-800">Super Administrator</p>
+                                                    <p className="text-xs text-purple-600">Top-level control over all users and sites</p>
+                                                </div>
                                             </div>
                                             <button
                                                 type="button"
                                                 onClick={() => {
-                                                    const newVal = !permissions[perm.key];
-                                                    setPermissions(prev => {
-                                                        const updated = { ...prev, [perm.key]: newVal };
-                                                        // Auto-assign site permissions if management is enabled
-                                                        if (newVal) {
-                                                            if (perm.key === 'manage_wtc') {
-                                                                updated.canAccessWTC = true;
-                                                                updated.wtc_canAdd = true;
-                                                                updated.wtc_canEdit = true;
-                                                                updated.wtc_canDelete = true;
-                                                            } else if (perm.key === 'manage_hls') {
-                                                                updated.canAccessHLS = true;
-                                                                updated.hls_canAdd = true;
-                                                                updated.hls_canEdit = true;
-                                                                updated.hls_canDelete = true;
-                                                            } else if (perm.key === 'manage_hlse') {
-                                                                updated.canAccessHLSE = true;
-                                                                updated.hlse_canAdd = true;
-                                                                updated.hlse_canEdit = true;
-                                                                updated.hlse_canDelete = true;
-                                                            }
-                                                        }
-                                                        return updated;
-                                                    });
+                                                    const newVal = !isSuperAdmin;
+                                                    setIsSuperAdmin(newVal);
+                                                    if (newVal) setIsAdmin(true);
                                                 }}
-                                                className={`relative w-9 h-5 rounded-full transition-colors duration-200 ${permissions[perm.key] ? 'bg-amber-500' : 'bg-slate-200'}`}
+                                                className={`relative w-11 h-6 rounded-full transition-colors duration-200 shrink-0 ${isSuperAdmin ? 'bg-purple-500' : 'bg-slate-200'}`}
                                             >
-                                                <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200 ${permissions[perm.key] ? 'translate-x-4' : ''}`} />
+                                                <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${isSuperAdmin ? 'translate-x-5' : ''}`} />
                                             </button>
                                         </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    )}
 
-                    {/* Permissions Matrix (Non-Management) */}
-                    {!isSuperAdmin && (
-                        <div className="space-y-4">
-                            <div className="flex items-center gap-2 mt-4">
-                                <Shield size={16} className="text-[#00A3A8]" />
-                                <p className="text-xs font-bold text-[#003135] uppercase tracking-wider">Functional Permissions</p>
-                            </div>
-                            
-                            <div className="space-y-3">
-                                {getGroupedPermissions().map((group) => {
-                                    const isOpen = expandedCategories[group.id];
-                                    const activeCount = group.items.filter(item => permissions[item.key]).length;
-
-                                    return (
-                                        <div key={group.id} className="border border-[#D1DDDE] rounded-xl overflow-hidden shadow-sm bg-white">
-                                            {/* Header */}
+                                        {/* Admin Toggle */}
+                                        <div className="flex items-center justify-between bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+                                            <div className="flex items-center gap-2">
+                                                <ShieldCheck size={18} className="text-amber-600" />
+                                                <div>
+                                                    <p className="text-sm font-bold text-amber-800">Administrator</p>
+                                                    <p className="text-xs text-amber-600">Can manage users for specific sites</p>
+                                                </div>
+                                            </div>
                                             <button
                                                 type="button"
-                                                onClick={() => toggleCategory(group.id)}
-                                                className="w-full flex items-center justify-between bg-slate-50 px-4 py-3 border-b border-[#D1DDDE] hover:bg-slate-100 transition-colors text-left"
+                                                disabled={isSuperAdmin}
+                                                onClick={() => {
+                                                    const newVal = !isAdmin;
+                                                    setIsAdmin(newVal);
+                                                    // If turning off admin, also turn off management perms
+                                                    if (!newVal) {
+                                                        setPermissions(prev => ({ 
+                                                            ...prev, 
+                                                            manage_wtc: false, 
+                                                            manage_hls: false,
+                                                            manage_hlse: false
+                                                        }));
+                                                    }
+                                                }}
+                                                className={`relative w-11 h-6 rounded-full transition-colors duration-200 shrink-0 ${isAdmin ? 'bg-amber-500' : 'bg-slate-200'} ${isSuperAdmin ? 'opacity-50' : ''}`}
                                             >
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-xs font-black text-[#003135] uppercase tracking-wider">{group.title}</span>
-                                                    {activeCount > 0 && (
-                                                        <span className="bg-[#003135]/5 text-[#003135] text-[10px] px-2 py-0.5 rounded-lg font-black">
-                                                            {activeCount} active
-                                                        </span>
-                                                    )}
-                                                </div>
-                                                <div className="text-slate-400">
-                                                    {isOpen ? <ChevronDown size={16} strokeWidth={2.5} /> : <ChevronRight size={16} strokeWidth={2.5} />}
-                                                </div>
+                                                <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${isAdmin ? 'translate-x-5' : ''}`} />
                                             </button>
+                                        </div>
 
-                                            {/* Body */}
-                                            {isOpen && (
-                                                <div className="divide-y divide-slate-100 bg-white">
-                                                    {group.items.map((perm) => (
-                                                        <div
-                                                            key={perm.key}
-                                                            className="flex items-center justify-between px-4 py-3 hover:bg-slate-50/50 transition-colors"
-                                                        >
-                                                            <div>
-                                                                <p className="text-sm font-semibold text-[#003135]">{perm.label}</p>
-                                                                <p className="text-xs text-slate-400">{perm.description}</p>
-                                                            </div>
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => togglePermission(perm.key)}
-                                                                className={`relative w-11 h-6 rounded-full transition-colors duration-200 shrink-0 ml-4 ${permissions[perm.key] ? 'bg-[#00A3A8]' : 'bg-slate-200'}`}
-                                                            >
-                                                                <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${permissions[perm.key] ? 'translate-x-5' : ''}`} />
-                                                            </button>
+                                        {/* Management Permissions (Nested under Admin) */}
+                                        {isAdmin && !isSuperAdmin && (
+                                            <div className="pl-4 border-l-2 border-amber-100 space-y-2 mt-2">
+                                                {visiblePermissions.filter(p => p.key.startsWith('manage_')).map(perm => (
+                                                    <div key={perm.key} className="flex items-center justify-between py-1">
+                                                        <div>
+                                                            <p className="text-xs font-bold text-amber-900">{perm.label}</p>
+                                                            <p className="text-[10px] text-amber-600">Grants full site control</p>
                                                         </div>
-                                                    ))}
-                                                    {['wtc', 'hls', 'hlse'].includes(group.id) && permissions[group.id === 'wtc' ? 'canAccessWTC' : group.id === 'hls' ? 'canAccessHLS' : 'canAccessHLSE'] && (
-                                                        <div className="px-4 py-4 bg-slate-50/70 border-t border-slate-100 space-y-3">
-                                                            <div>
-                                                                <p className="text-xs font-bold text-[#003135] uppercase tracking-wider">
-                                                                    Limit Allowed {group.id === 'hlse' ? 'Categories' : 'Departments'}
-                                                                </p>
-                                                                <p className="text-[10px] text-slate-400">
-                                                                    Select which {group.id === 'hlse' ? 'categories' : 'departments'} this user can see. Leave all unselected to allow access to all.
-                                                                </p>
-                                                            </div>
-                                                            <div className="flex flex-wrap gap-2">
-                                                                {siteDepartments[group.id]?.map(dept => {
-                                                                    const isChecked = allowedDepartments[group.id]?.includes(dept);
-                                                                    return (
-                                                                        <button
-                                                                            key={dept}
-                                                                            type="button"
-                                                                            onClick={() => {
-                                                                                setAllowedDepartments(prev => {
-                                                                                    const current = prev[group.id] || [];
-                                                                                    const updated = current.includes(dept)
-                                                                                        ? current.filter(d => d !== dept)
-                                                                                        : [...current, dept];
-                                                                                    return { ...prev, [group.id]: updated };
-                                                                                });
-                                                                            }}
-                                                                            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
-                                                                                isChecked
-                                                                                    ? 'bg-[#003135] text-white border-[#003135]'
-                                                                                    : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
-                                                                            }`}
-                                                                        >
-                                                                            {dept}
-                                                                        </button>
-                                                                    );
-                                                                })}
-                                                            </div>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                const newVal = !permissions[perm.key];
+                                                                setPermissions(prev => {
+                                                                    const updated = { ...prev, [perm.key]: newVal };
+                                                                    // Auto-assign site permissions if management is enabled
+                                                                    if (newVal) {
+                                                                        if (perm.key === 'manage_wtc') {
+                                                                            updated.canAccessWTC = true;
+                                                                            updated.wtc_canAdd = true;
+                                                                            updated.wtc_canEdit = true;
+                                                                            updated.wtc_canDelete = true;
+                                                                        } else if (perm.key === 'manage_hls') {
+                                                                            updated.canAccessHLS = true;
+                                                                            updated.hls_canAdd = true;
+                                                                            updated.hls_canEdit = true;
+                                                                            updated.hls_canDelete = true;
+                                                                        } else if (perm.key === 'manage_hlse') {
+                                                                            updated.canAccessHLSE = true;
+                                                                            updated.hlse_canAdd = true;
+                                                                            updated.hlse_canEdit = true;
+                                                                            updated.hlse_canDelete = true;
+                                                                        }
+                                                                    }
+                                                                    return updated;
+                                                                });
+                                                            }}
+                                                            className={`relative w-9 h-5 rounded-full transition-colors duration-200 shrink-0 ${permissions[perm.key] ? 'bg-amber-500' : 'bg-slate-200'}`}
+                                                        >
+                                                            <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200 ${permissions[perm.key] ? 'translate-x-4' : ''}`} />
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Right Column: Functional Permissions */}
+                            <div className="space-y-4">
+                                <div className="flex items-center gap-2">
+                                    <Shield size={16} className="text-[#00A3A8]" />
+                                    <h3 className="text-sm font-black text-[#003135] uppercase tracking-wider">Functional Permissions</h3>
+                                </div>
+                                
+                                {isSuperAdmin ? (
+                                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-6 text-center h-full flex flex-col items-center justify-center">
+                                        <ShieldCheck size={32} className="text-purple-400 mb-2" />
+                                        <p className="text-sm font-bold text-slate-700">Super Administrator Privileges</p>
+                                        <p className="text-xs text-slate-500 mt-1 max-w-xs mx-auto">
+                                            This user has top-level control. Functional permissions are automatically granted and do not need to be assigned individually.
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-3">
+                                        {getGroupedPermissions().map((group) => {
+                                            const isOpen = expandedCategories[group.id];
+                                            const activeCount = group.items.filter(item => permissions[item.key]).length;
+
+                                            return (
+                                                <div key={group.id} className="border border-[#D1DDDE] rounded-xl overflow-hidden shadow-sm bg-white">
+                                                    {/* Header */}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => toggleCategory(group.id)}
+                                                        className="w-full flex items-center justify-between bg-slate-50 px-4 py-3 border-b border-[#D1DDDE] hover:bg-slate-100 transition-colors text-left"
+                                                    >
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-xs font-black text-[#003135] uppercase tracking-wider">{group.title}</span>
+                                                            {activeCount > 0 && (
+                                                                <span className="bg-[#003135]/5 text-[#003135] text-[10px] px-2 py-0.5 rounded-lg font-black">
+                                                                    {activeCount} active
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <div className="text-slate-400">
+                                                            {isOpen ? <ChevronDown size={16} strokeWidth={2.5} /> : <ChevronRight size={16} strokeWidth={2.5} />}
+                                                        </div>
+                                                    </button>
+
+                                                    {/* Body */}
+                                                    {isOpen && (
+                                                        <div className="divide-y divide-slate-100 bg-white">
+                                                            {group.items.map((perm) => (
+                                                                <div
+                                                                    key={perm.key}
+                                                                    className="flex items-center justify-between px-4 py-3 hover:bg-slate-50/50 transition-colors"
+                                                                >
+                                                                    <div>
+                                                                        <p className="text-sm font-semibold text-[#003135]">{perm.label}</p>
+                                                                        <p className="text-xs text-slate-400">{perm.description}</p>
+                                                                    </div>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => togglePermission(perm.key)}
+                                                                        className={`relative w-11 h-6 rounded-full transition-colors duration-200 shrink-0 ml-4 ${permissions[perm.key] ? 'bg-[#00A3A8]' : 'bg-slate-200'}`}
+                                                                    >
+                                                                        <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${permissions[perm.key] ? 'translate-x-5' : ''}`} />
+                                                                    </button>
+                                                                </div>
+                                                            ))}
+                                                            {['wtc', 'hls', 'hlse'].includes(group.id) && permissions[group.id === 'wtc' ? 'canAccessWTC' : group.id === 'hls' ? 'canAccessHLS' : 'canAccessHLSE'] && (
+                                                                <div className="px-4 py-4 bg-slate-50/70 border-t border-slate-100 space-y-3">
+                                                                    <div>
+                                                                        <p className="text-xs font-bold text-[#003135] uppercase tracking-wider">
+                                                                            Limit Allowed {group.id === 'hlse' ? 'Categories' : 'Departments'}
+                                                                        </p>
+                                                                        <p className="text-[10px] text-slate-400">
+                                                                            Select which {group.id === 'hlse' ? 'categories' : 'departments'} this user can see. Leave all unselected to allow access to all.
+                                                                        </p>
+                                                                    </div>
+                                                                    <div className="flex flex-wrap gap-2">
+                                                                        {siteDepartments[group.id]?.map(dept => {
+                                                                            const isChecked = allowedDepartments[group.id]?.includes(dept);
+                                                                            return (
+                                                                                <button
+                                                                                    key={dept}
+                                                                                    type="button"
+                                                                                    onClick={() => {
+                                                                                        setAllowedDepartments(prev => {
+                                                                                            const current = prev[group.id] || [];
+                                                                                            const updated = current.includes(dept)
+                                                                                                ? current.filter(d => d !== dept)
+                                                                                                : [...current, dept];
+                                                                                            return { ...prev, [group.id]: updated };
+                                                                                        });
+                                                                                    }}
+                                                                                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
+                                                                                        isChecked
+                                                                                            ? 'bg-[#003135] text-white border-[#003135]'
+                                                                                            : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
+                                                                                    }`}
+                                                                                >
+                                                                                    {dept}
+                                                                                </button>
+                                                                            );
+                                                                        })}
+                                                                    </div>
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     )}
                                                 </div>
-                                            )}
-                                        </div>
-                                    );
-                                })}
+                                            );
+                                        })}
 
-                                {getGroupedPermissions().length === 0 && (
-                                    <div className="p-8 text-center text-slate-400 text-sm border border-dashed border-[#D1DDDE] rounded-xl">
-                                        No permissions available for you to assign.
+                                        {getGroupedPermissions().length === 0 && (
+                                            <div className="p-8 text-center text-slate-400 text-sm border border-dashed border-[#D1DDDE] rounded-xl">
+                                                No permissions available for you to assign.
+                                            </div>
+                                        )}
                                     </div>
                                 )}
                             </div>
                         </div>
-                    )}
+                    </div>
 
                     {/* Footer */}
-                    <div className="flex gap-3 pt-2">
+                    <div className="flex justify-end gap-3 px-6 py-4 border-t border-[#D1DDDE] shrink-0 bg-slate-50 rounded-b-2xl">
                         <button
                             type="button"
                             onClick={onClose}
-                            className="flex-1 py-2.5 border border-[#D1DDDE] text-[#003135] font-bold rounded-xl hover:bg-slate-50 transition-colors"
+                            className="px-6 py-2.5 border border-[#D1DDDE] text-[#003135] font-bold rounded-xl hover:bg-white transition-colors bg-transparent"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
                             disabled={loading}
-                            className="flex-1 py-2.5 bg-[#003135] text-white font-bold rounded-xl hover:bg-[#004a50] transition-colors flex items-center justify-center gap-2 disabled:opacity-60"
+                            className="px-6 py-2.5 bg-[#003135] text-white font-bold rounded-xl hover:bg-[#004a50] transition-colors flex items-center justify-center gap-2 disabled:opacity-60 min-w-[140px]"
                         >
                             {loading && <Loader2 size={16} className="animate-spin" />}
                             {isEdit ? 'Save Changes' : 'Create User'}
