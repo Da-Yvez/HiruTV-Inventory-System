@@ -53,9 +53,16 @@ const QRPrinting = () => {
                 const allDevices = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }))
                     .sort((a, b) => a.pcNumber.localeCompare(b.pcNumber, undefined, { numeric: true, sensitivity: 'base' }));
                 
-                const depts = ['All', ...new Set(allDevices.map(d => d.department))].filter(Boolean);
+                const siteId = currentSite?.id;
+                const allowedDeptsForSite = user?.allowedDepartments?.[siteId] || [];
+                const hasDeptRestriction = !user?.isSuperAdmin && allowedDeptsForSite.length > 0;
+                const filteredDevices = hasDeptRestriction
+                    ? allDevices.filter(d => allowedDeptsForSite.includes(d.department))
+                    : allDevices;
+
+                const depts = ['All', ...new Set(filteredDevices.map(d => d.department))].filter(Boolean);
                 setDepartments(depts);
-                setDevices(allDevices);
+                setDevices(filteredDevices);
             } catch (error) {
                 console.error("Error fetching devices for printing:", error);
             } finally {
@@ -63,7 +70,7 @@ const QRPrinting = () => {
             }
         };
         fetchData();
-    }, [currentSite]);
+    }, [currentSite, user]);
 
     const filteredDevices = selectedDept === 'All' 
         ? devices 

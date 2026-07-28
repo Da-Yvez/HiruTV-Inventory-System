@@ -126,7 +126,14 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
                 (a.pcNumber || '').localeCompare(b.pcNumber || '', undefined, { numeric: true, sensitivity: 'base' })
             );
 
-            setDevices(sortedDevices);
+            const siteId = currentSite?.id;
+            const allowedDeptsForSite = user?.allowedDepartments?.[siteId] || [];
+            const hasDeptRestriction = !user?.isSuperAdmin && allowedDeptsForSite.length > 0;
+            const userDevices = hasDeptRestriction
+                ? sortedDevices.filter(d => allowedDeptsForSite.includes(d.department))
+                : sortedDevices;
+
+            setDevices(userDevices);
             setLoading(false);
         }, (error) => {
             console.error("Inventory listener error:", error);
@@ -689,30 +696,39 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
                                                 </button>
                                             )}
                                         </div>
-                                        <div className="max-h-64 overflow-y-auto p-2">
-                                            {currentSite.departments.map(dept => (
-                                                <label
-                                                    key={dept}
-                                                    className="flex items-center gap-3 p-3 hover:bg-slate-50 rounded-2xl cursor-pointer transition-colors"
-                                                >
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={selectedDepts.includes(dept)}
-                                                        onChange={(e) => {
-                                                            if (e.target.checked) {
-                                                                setSelectedDepts([...selectedDepts, dept]);
-                                                            } else {
-                                                                setSelectedDepts(selectedDepts.filter(d => d !== dept));
-                                                            }
-                                                        }}
-                                                        className="w-5 h-5 rounded-lg border-2 border-slate-200 text-[#003135] focus:ring-[#003135]"
-                                                    />
-                                                    <span className={`text-sm font-bold ${selectedDepts.includes(dept) ? 'text-[#003135]' : 'text-slate-500'}`}>
-                                                        {dept}
-                                                    </span>
-                                                </label>
-                                            ))}
-                                        </div>
+                                         <div className="max-h-64 overflow-y-auto p-2">
+                                             {(() => {
+                                                 const siteId = currentSite?.id;
+                                                 const allowedDeptsForSite = user?.allowedDepartments?.[siteId] || [];
+                                                 const hasDeptRestriction = !user?.isSuperAdmin && allowedDeptsForSite.length > 0;
+                                                 const deptsToDisplay = hasDeptRestriction
+                                                     ? currentSite.departments.filter(d => allowedDeptsForSite.includes(d))
+                                                     : currentSite.departments;
+
+                                                 return deptsToDisplay.map(dept => (
+                                                     <label
+                                                         key={dept}
+                                                         className="flex items-center gap-3 p-3 hover:bg-slate-50 rounded-2xl cursor-pointer transition-colors"
+                                                     >
+                                                         <input
+                                                             type="checkbox"
+                                                             checked={selectedDepts.includes(dept)}
+                                                             onChange={(e) => {
+                                                                 if (e.target.checked) {
+                                                                     setSelectedDepts([...selectedDepts, dept]);
+                                                                 } else {
+                                                                     setSelectedDepts(selectedDepts.filter(d => d !== dept));
+                                                                 }
+                                                             }}
+                                                             className="w-5 h-5 rounded-lg border-2 border-slate-200 text-[#003135] focus:ring-[#003135]"
+                                                         />
+                                                         <span className={`text-sm font-bold ${selectedDepts.includes(dept) ? 'text-[#003135]' : 'text-slate-500'}`}>
+                                                             {dept}
+                                                         </span>
+                                                     </label>
+                                                 ));
+                                             })()}
+                                         </div>
                                     </motion.div>
                                 </>
                             )}

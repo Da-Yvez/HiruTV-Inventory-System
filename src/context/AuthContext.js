@@ -33,6 +33,7 @@ export const AuthProvider = ({ children }) => {
             isSuperAdmin: profile.isSuperAdmin === true,
             isAdmin: profile.isAdmin === true,
             permissions: profile.permissions || {},
+            allowedDepartments: profile.allowedDepartments || {},
             forcePasswordChange: profile.forcePasswordChange === true,
         };
     }

@@ -130,7 +130,15 @@ const StoresInOut = ({ activeSection = 'storesInOut_active' }) => {
                 id: doc.id,
                 ...doc.data()
             }));
-            setInventory(items);
+            
+            const siteId = currentSite?.id;
+            const allowedDeptsForSite = user?.allowedDepartments?.[siteId] || [];
+            const hasDeptRestriction = !user?.isSuperAdmin && allowedDeptsForSite.length > 0;
+            const filteredItems = hasDeptRestriction
+                ? items.filter(d => allowedDeptsForSite.includes(d.department))
+                : items;
+
+            setInventory(filteredItems);
         } catch (error) {
             console.error("Error loading inventory:", error);
         }

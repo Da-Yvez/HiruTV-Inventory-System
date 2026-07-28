@@ -1,9 +1,12 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { PERMISSIONS, DEFAULT_PERMISSIONS } from '@/lib/permissions';
 import { X, ShieldCheck, Shield, Loader2, Eye, EyeOff, ChevronDown, ChevronRight } from 'lucide-react';
+import { db } from '@/lib/firebase';
+import { doc, getDoc } from 'firebase/firestore';
+import { siteConfig } from '@/context/SiteContext';
 
 export default function UserFormModal({ mode, user, onClose, onSuccess }) {
     const { getAuthToken, user: currentUser } = useAuth();
@@ -17,11 +20,49 @@ export default function UserFormModal({ mode, user, onClose, onSuccess }) {
     const [isSuperAdmin, setIsSuperAdmin] = useState(user?.isSuperAdmin || false);
     const [isAdmin, setIsAdmin] = useState(user?.isAdmin || false);
     const [permissions, setPermissions] = useState(user?.permissions || { ...DEFAULT_PERMISSIONS });
+    const [allowedDepartments, setAllowedDepartments] = useState(user?.allowedDepartments || {});
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
+    const [siteDepartments, setSiteDepartments] = useState({
+        wtc: siteConfig.wtc.departments,
+        hls: siteConfig.hls.departments,
+        hlse: siteConfig.hlse.departments
+    });
+
+    useEffect(() => {
+        const fetchSiteDepts = async () => {
+            const depts = { ...siteDepartments };
+            for (const siteId of ['wtc', 'hls', 'hlse']) {
+                try {
+                    const snap = await getDoc(doc(db, 'sites', siteId));
+                    if (snap.exists() && snap.data().departments) {
+                        depts[siteId] = snap.data().departments;
+                    }
+                } catch (e) {
+                    console.error(`Error fetching departments for ${siteId}:`, e);
+                }
+            }
+            setSiteDepartments(depts);
+        };
+        fetchSiteDepts();
+    }, []);
+
     const togglePermission = (key) => {
-        setPermissions(prev => ({ ...prev, [key]: !prev[key] }));
+        setPermissions(prev => {
+            const updated = { ...prev, [key]: !prev[key] };
+            // Clear allowedDepartments if site access is revoked
+            if (key === 'canAccessWTC' && !updated.canAccessWTC) {
+                setAllowedDepartments(d => ({ ...d, wtc: [] }));
+            }
+            if (key === 'canAccessHLS' && !updated.canAccessHLS) {
+                setAllowedDepartments(d => ({ ...d, hls: [] }));
+            }
+            if (key === 'canAccessHLSE' && !updated.canAccessHLSE) {
+                setAllowedDepartments(d => ({ ...d, hlse: [] }));
+            }
+            return updated;
+        });
     };
 
     const [expandedCategories, setExpandedCategories] = useState({
@@ -69,7 +110,7 @@ export default function UserFormModal({ mode, user, onClose, onSuccess }) {
         try {
             const token = await getAuthToken();
 
-            const payload = { displayName, epfNumber, isAdmin, isSuperAdmin, permissions };
+            const payload = { displayName, epfNumber, isAdmin, isSuperAdmin, permissions, allowedDepartments };
             if (!isEdit) {
                 payload.email = email;
                 payload.password = password;
@@ -389,6 +430,45 @@ export default function UserFormModal({ mode, user, onClose, onSuccess }) {
                                                             </button>
                                                         </div>
                                                     ))}
+                                                    {['wtc', 'hls', 'hlse'].includes(group.id) && permissions[group.id === 'wtc' ? 'canAccessWTC' : group.id === 'hls' ? 'canAccessHLS' : 'canAccessHLSE'] && (
+                                                        <div className="px-4 py-4 bg-slate-50/70 border-t border-slate-100 space-y-3">
+                                                            <div>
+                                                                <p className="text-xs font-bold text-[#003135] uppercase tracking-wider">
+                                                                    Limit Allowed {group.id === 'hlse' ? 'Categories' : 'Departments'}
+                                                                </p>
+                                                                <p className="text-[10px] text-slate-400">
+                                                                    Select which {group.id === 'hlse' ? 'categories' : 'departments'} this user can see. Leave all unselected to allow access to all.
+                                                                </p>
+                                                            </div>
+                                                            <div className="flex flex-wrap gap-2">
+                                                                {siteDepartments[group.id]?.map(dept => {
+                                                                    const isChecked = allowedDepartments[group.id]?.includes(dept);
+                                                                    return (
+                                                                        <button
+                                                                            key={dept}
+                                                                            type="button"
+                                                                            onClick={() => {
+                                                                                setAllowedDepartments(prev => {
+                                                                                    const current = prev[group.id] || [];
+                                                                                    const updated = current.includes(dept)
+                                                                                        ? current.filter(d => d !== dept)
+                                                                                        : [...current, dept];
+                                                                                    return { ...prev, [group.id]: updated };
+                                                                                });
+                                                                            }}
+                                                                            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
+                                                                                isChecked
+                                                                                    ? 'bg-[#003135] text-white border-[#003135]'
+                                                                                    : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
+                                                                            }`}
+                                                                        >
+                                                                            {dept}
+                                                                        </button>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             )}
                                         </div>
