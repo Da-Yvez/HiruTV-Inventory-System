@@ -10,6 +10,8 @@ import {
     User,
     Calendar,
     X,
+    AlertCircle,
+    CheckCircle2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -26,6 +28,11 @@ const ActivityLogs = () => {
     const [clearMode, setClearMode] = useState('full'); // 'full' | 'range'
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
+    const [toast, setToast] = useState(null);
+    const showToast = (text, type = 'error') => {
+        setToast({ text, type });
+        setTimeout(() => setToast(null), 3000);
+    };
 
     const fetchLogs = useCallback(async () => {
         if (!currentSite?.logsCollection) return;
@@ -92,7 +99,7 @@ const ActivityLogs = () => {
 
         if (clearMode === 'range') {
             if (!startDate && !endDate) {
-                alert("Please select at least a Start Date or End Date.");
+                showToast("Please select at least a Start Date or End Date.");
                 return;
             }
             if (startDate) url += `&startDate=${encodeURIComponent(startDate)}`;
@@ -119,10 +126,10 @@ const ActivityLogs = () => {
 
             fetchLogs();
             setIsClearModalOpen(false);
-            alert(`Successfully cleared ${data.count} logs.`);
+            showToast(`Successfully cleared ${data.count} logs.`, "success");
         } catch (error) {
             console.error('Error clearing logs:', error);
-            alert(error.message);
+            showToast(error.message);
         } finally {
             setClearing(false);
         }
@@ -354,6 +361,32 @@ const ActivityLogs = () => {
                             </div>
                         </motion.div>
                     </div>
+                )}
+            </AnimatePresence>
+
+            {/* Floating Toast Notification */}
+            <AnimatePresence>
+                {toast && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 50, scale: 0.9 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 20, scale: 0.9 }}
+                        className={`fixed bottom-5 right-5 z-[9999] flex items-center gap-3 px-5 py-3.5 rounded-2xl border shadow-xl text-sm font-bold ${
+                            toast.type === 'success'
+                                ? 'bg-emerald-50 border-emerald-100 text-emerald-800 shadow-emerald-500/10'
+                                : 'bg-rose-50 border-rose-100 text-rose-800 shadow-rose-500/10'
+                        }`}
+                    >
+                        {toast.type === 'success' ? (
+                            <CheckCircle2 size={18} className="text-emerald-500 shrink-0" />
+                        ) : (
+                            <AlertCircle size={18} className="text-rose-500 shrink-0" />
+                        )}
+                        <span>{toast.text}</span>
+                        <button onClick={() => setToast(null)} className="ml-2 hover:opacity-75 transition-opacity shrink-0">
+                            <X size={14} />
+                        </button>
+                    </motion.div>
                 )}
             </AnimatePresence>
         </div>

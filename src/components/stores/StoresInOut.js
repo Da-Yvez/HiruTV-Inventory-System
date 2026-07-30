@@ -78,6 +78,11 @@ const StoresInOut = ({ activeSection = 'storesInOut_active' }) => {
     const [remarks, setRemarks] = useState('');
     const [pickedUpBy, setPickedUpBy] = useState('');
     const [selectedItems, setSelectedItems] = useState([]);
+    const [toast, setToast] = useState(null);
+    const showToast = (text, type = 'error') => {
+        setToast({ text, type });
+        setTimeout(() => setToast(null), 3000);
+    };
     
     // Inventory picker states
     const [inventory, setInventory] = useState([]);
@@ -282,7 +287,7 @@ const StoresInOut = ({ activeSection = 'storesInOut_active' }) => {
     // Open Edit Modal (only for pending documents)
     const handleOpenEdit = async (record) => {
         if (record.status !== 'pending') {
-            alert("Only SIO forms with PENDING status can be edited.");
+            showToast("Only SIO forms with PENDING status can be edited.");
             return;
         }
 
@@ -325,7 +330,7 @@ const StoresInOut = ({ activeSection = 'storesInOut_active' }) => {
         const isSuperAdminUser = user?.isSuperAdmin === true;
         
         if (record.status !== 'pending' && !isSuperAdminUser) {
-            alert("Only Super Administrators can delete non-pending SIO forms.");
+            showToast("Only Super Administrators can delete non-pending SIO forms.");
             return;
         }
 
@@ -344,7 +349,7 @@ const StoresInOut = ({ activeSection = 'storesInOut_active' }) => {
             );
         } catch (error) {
             console.error("Error deleting SIO record:", error);
-            alert("Failed to delete SIO Form.");
+            showToast("Failed to delete SIO Form.");
         }
     };
 
@@ -447,12 +452,12 @@ const StoresInOut = ({ activeSection = 'storesInOut_active' }) => {
         let finalItems = [];
         if (type === 'out') {
             if (selectedItems.length === 0) {
-                alert("Please add at least one item.");
+                showToast("Please add at least one item.");
                 return;
             }
             const hasOverdrawn = selectedItems.some(i => i.quantity > i.maxQty);
             if (hasOverdrawn) {
-                alert("One or more items exceed current in-stock quantity!");
+                showToast("One or more items exceed current in-stock quantity!");
                 return;
             }
             finalItems = selectedItems.map(i => ({
@@ -469,7 +474,7 @@ const StoresInOut = ({ activeSection = 'storesInOut_active' }) => {
             // IN: Must check/verify returned items
             const returned = selectedOutRecord.items.filter(item => returnItemsChecked[item.id]);
             if (returned.length === 0) {
-                alert("Please check/select at least one item you are returning.");
+                showToast("Please check/select at least one item you are returning.");
                 return;
             }
             finalItems = returned.map(i => ({
@@ -530,7 +535,7 @@ const StoresInOut = ({ activeSection = 'storesInOut_active' }) => {
             setIsCreateOpen(false);
         } catch (error) {
             console.error("Error saving SIO record:", error);
-            alert("Failed to save SIO Form.");
+            showToast("Failed to save SIO Form.");
         } finally {
             setFormSaving(false);
         }
@@ -613,7 +618,7 @@ const StoresInOut = ({ activeSection = 'storesInOut_active' }) => {
             );
         } catch (error) {
             console.error("Error updating SIO status:", error);
-            alert(error.message || "Failed to update status.");
+            showToast(error.message || "Failed to update status.");
         }
     };
 
@@ -1730,6 +1735,32 @@ const StoresInOut = ({ activeSection = 'storesInOut_active' }) => {
                             </div>
                         </motion.div>
                     </div>
+                )}
+            </AnimatePresence>
+
+            {/* Floating Toast Notification */}
+            <AnimatePresence>
+                {toast && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 50, scale: 0.9 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 20, scale: 0.9 }}
+                        className={`fixed bottom-5 right-5 z-[9999] flex items-center gap-3 px-5 py-3.5 rounded-2xl border shadow-xl text-sm font-bold ${
+                            toast.type === 'success'
+                                ? 'bg-emerald-50 border-emerald-100 text-emerald-800 shadow-emerald-500/10'
+                                : 'bg-rose-50 border-rose-100 text-rose-800 shadow-rose-500/10'
+                        }`}
+                    >
+                        {toast.type === 'success' ? (
+                            <CheckCircle2 size={18} className="text-emerald-500 shrink-0" />
+                        ) : (
+                            <AlertCircle size={18} className="text-rose-500 shrink-0" />
+                        )}
+                        <span>{toast.text}</span>
+                        <button onClick={() => setToast(null)} className="ml-2 hover:opacity-75 transition-opacity shrink-0">
+                            <X size={14} />
+                        </button>
+                    </motion.div>
                 )}
             </AnimatePresence>
         </div>

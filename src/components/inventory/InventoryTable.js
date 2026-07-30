@@ -26,7 +26,9 @@ import {
     QrCode,
     Printer,
     X,
-    FileText
+    FileText,
+    AlertCircle,
+    CheckCircle2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { addLog, generateQRKey } from '@/lib/utils';
@@ -63,6 +65,11 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
     const [selectedDepts, setSelectedDepts] = useState([]);
     const [isDeptFilterOpen, setIsDeptFilterOpen] = useState(false);
     const [isViewMode, setIsViewMode] = useState(false);
+    const [toast, setToast] = useState(null);
+    const showToast = (text, type = 'error') => {
+        setToast({ text, type });
+        setTimeout(() => setToast(null), 3000);
+    };
     const [deviceToDelete, setDeviceToDelete] = useState(null);
     const [isLabelModalOpen, setIsLabelModalOpen] = useState(false);
     const [deviceForLabel, setDeviceForLabel] = useState(null);
@@ -421,9 +428,10 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
         try {
             await deleteDoc(doc(db, currentSite.firebaseCollection, deviceToDelete.id));
             await addLog(currentSite, user, 'Device Deleted', `Deleted device ${deviceToDelete.pcNumber} (${deviceToDelete.pcModel})`);
+            showToast("Device deleted successfully.", "success");
         } catch (error) {
             console.error("Error deleting device:", error);
-            alert("Failed to delete device.");
+            showToast("Failed to delete device.");
         } finally {
             setDeviceToDelete(null);
         }
@@ -1226,6 +1234,32 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
                             </div>
                         </motion.div>
                     </div>
+                )}
+            </AnimatePresence>
+
+            {/* Floating Toast Notification */}
+            <AnimatePresence>
+                {toast && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 50, scale: 0.9 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 20, scale: 0.9 }}
+                        className={`fixed bottom-5 right-5 z-[9999] flex items-center gap-3 px-5 py-3.5 rounded-2xl border shadow-xl text-sm font-bold ${
+                            toast.type === 'success'
+                                ? 'bg-emerald-50 border-emerald-100 text-emerald-800 shadow-emerald-500/10'
+                                : 'bg-rose-50 border-rose-100 text-rose-800 shadow-rose-500/10'
+                        }`}
+                    >
+                        {toast.type === 'success' ? (
+                            <CheckCircle2 size={18} className="text-emerald-500 shrink-0" />
+                        ) : (
+                            <AlertCircle size={18} className="text-rose-500 shrink-0" />
+                        )}
+                        <span>{toast.text}</span>
+                        <button onClick={() => setToast(null)} className="ml-2 hover:opacity-75 transition-opacity shrink-0">
+                            <X size={14} />
+                        </button>
+                    </motion.div>
                 )}
             </AnimatePresence>
         </div>

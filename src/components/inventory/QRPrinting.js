@@ -13,6 +13,8 @@ import {
     Square, 
     ChevronRight, 
     AlertCircle,
+    CheckCircle2,
+    X,
     Loader2,
     FileText,
     Grid,
@@ -30,6 +32,12 @@ const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 const QRPrinting = () => {
     const { currentSite } = useSite();
     const { user } = useAuth();
+    
+    const [toast, setToast] = useState(null);
+    const showToast = (text, type = 'error') => {
+        setToast({ text, type });
+        setTimeout(() => setToast(null), 3000);
+    };
     const printRef = React.useRef(null);
     const [departments, setDepartments] = useState([]);
     const [selectedDept, setSelectedDept] = useState('All');
@@ -158,7 +166,7 @@ const QRPrinting = () => {
             
         } catch (error) {
             console.error("Error downloading QR labels:", error);
-            alert("An error occurred during download.");
+            showToast("An error occurred during download.");
         } finally {
             setActiveDownloadDevice(null);
             setIsDownloading(false);
@@ -300,6 +308,31 @@ const QRPrinting = () => {
                 </div>
             )}
 
+        {/* Floating Toast Notification */}
+        <AnimatePresence>
+            {toast && (
+                <motion.div
+                    initial={{ opacity: 0, y: 50, scale: 0.9 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 20, scale: 0.9 }}
+                    className={`fixed bottom-5 right-5 z-[9999] flex items-center gap-3 px-5 py-3.5 rounded-2xl border shadow-xl text-sm font-bold ${
+                        toast.type === 'success'
+                            ? 'bg-emerald-50 border-emerald-100 text-emerald-800 shadow-emerald-500/10'
+                            : 'bg-rose-50 border-rose-100 text-rose-800 shadow-rose-500/10'
+                    }`}
+                >
+                    {toast.type === 'success' ? (
+                        <CheckCircle2 size={18} className="text-emerald-500 shrink-0" />
+                    ) : (
+                        <AlertCircle size={18} className="text-rose-500 shrink-0" />
+                    )}
+                    <span>{toast.text}</span>
+                    <button onClick={() => setToast(null)} className="ml-2 hover:opacity-75 transition-opacity shrink-0">
+                        <X size={14} />
+                    </button>
+                </motion.div>
+            )}
+        </AnimatePresence>
         </div>
     );
 };
