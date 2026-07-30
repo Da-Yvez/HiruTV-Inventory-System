@@ -19,6 +19,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 const DeviceForm = ({ isOpen, onClose, onSave, initialData = null, departments = [], subcategories = {}, isReadOnly = false, collectionName }) => {
     const [showLicense, setShowLicense] = useState({});
+    const [errors, setErrors] = useState({});
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const normalizeInterfaces = (interfaces) => {
         const list = Array.isArray(interfaces) ? interfaces : [];
         const normalized = list.map((iface) => ({
@@ -74,6 +76,8 @@ const DeviceForm = ({ isOpen, onClose, onSave, initialData = null, departments =
     });
 
     useEffect(() => {
+        setErrors({});
+        setIsSubmitting(false);
         if (initialData) {
             setFormData({
                 ...formData,
@@ -112,11 +116,25 @@ const DeviceForm = ({ isOpen, onClose, onSave, initialData = null, departments =
 
     const handleChange = (e) => {
         const { name, value } = e.target;
+        if (errors[name]) {
+            setErrors(prev => ({ ...prev, [name]: null }));
+        }
         if (name === 'department') {
             setFormData(prev => ({ ...prev, department: value, subCategory: '' }));
         } else {
             setFormData(prev => ({ ...prev, [name]: value }));
         }
+    };
+
+    const handleGenerateSerial = () => {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        let result = '';
+        for (let i = 0; i < 6; i++) {
+            result += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        const generated = `${result}(G)`;
+        setErrors(prev => ({ ...prev, pcSerial: null }));
+        setFormData(prev => ({ ...prev, pcSerial: generated }));
     };
 
     const handleListChange = (listName, index, field, value) => {
@@ -137,9 +155,28 @@ const DeviceForm = ({ isOpen, onClose, onSave, initialData = null, departments =
         setFormData(prev => ({ ...prev, [listName]: newList }));
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        onSave(formData);
+        setErrors({});
+        setIsSubmitting(true);
+        try {
+            await onSave(formData);
+        } catch (err) {
+            if (err && err.field) {
+                setErrors({ [err.field]: err.message });
+                // Find the field and scroll to it if possible
+                const element = document.getElementsByName(err.field)[0];
+                if (element) {
+                    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    element.focus();
+                }
+            } else {
+                console.error("Submit error caught in form:", err);
+                setErrors({ submit: err?.message || 'An error occurred while saving.' });
+            }
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     if (!isOpen) return null;
@@ -191,11 +228,29 @@ const DeviceForm = ({ isOpen, onClose, onSave, initialData = null, departments =
                                         onChange={handleChange}
                                         disabled={isReadOnly}
                                         placeholder="Enter barcode"
-                                        className="w-full px-5 py-3 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:outline-none focus:border-[#003135] focus:bg-white transition-all font-bold text-[#003135] disabled:opacity-70 disabled:cursor-not-allowed"
+                                        className={`w-full px-5 py-3 bg-slate-50 border-2 rounded-2xl focus:outline-none focus:bg-white transition-all font-bold disabled:opacity-70 disabled:cursor-not-allowed ${
+                                            errors.pcNumber
+                                                ? 'border-rose-500 text-rose-900 focus:border-rose-500'
+                                                : 'border-slate-100 focus:border-[#003135] text-[#003135]'
+                                        }`}
                                     />
+                                    {errors.pcNumber && (
+                                        <p className="text-xs font-semibold text-rose-500 ml-1">{errors.pcNumber}</p>
+                                    )}
                                 </div>
                                 <div className="space-y-1.5">
-                                    <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Serial Number *</label>
+                                    <div className="flex justify-between items-center ml-1">
+                                        <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Serial Number *</label>
+                                        {!isReadOnly && (
+                                            <button
+                                                type="button"
+                                                onClick={handleGenerateSerial}
+                                                className="text-[10px] font-black text-[#003135] hover:text-[#004d54] uppercase tracking-wider bg-slate-100 hover:bg-slate-200 px-2.5 py-1 rounded-lg transition-colors border border-slate-200"
+                                            >
+                                                Generate
+                                            </button>
+                                        )}
+                                    </div>
                                     <input maxLength={100} 
                                         required
                                         name="pcSerial"
@@ -203,8 +258,15 @@ const DeviceForm = ({ isOpen, onClose, onSave, initialData = null, departments =
                                         onChange={handleChange}
                                         disabled={isReadOnly}
                                         placeholder="Enter serial number"
-                                        className="w-full px-5 py-3 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:outline-none focus:border-[#003135] focus:bg-white transition-all font-medium disabled:opacity-70 disabled:cursor-not-allowed"
+                                        className={`w-full px-5 py-3 bg-slate-50 border-2 rounded-2xl focus:outline-none focus:bg-white transition-all font-medium disabled:opacity-70 disabled:cursor-not-allowed ${
+                                            errors.pcSerial
+                                                ? 'border-rose-500 text-rose-900 focus:border-rose-500'
+                                                : 'border-slate-100 focus:border-[#003135]'
+                                        }`}
                                     />
+                                    {errors.pcSerial && (
+                                        <p className="text-xs font-semibold text-rose-500 ml-1">{errors.pcSerial}</p>
+                                    )}
                                 </div>
                             </div>
 
@@ -355,8 +417,15 @@ const DeviceForm = ({ isOpen, onClose, onSave, initialData = null, departments =
                                             onChange={handleChange}
                                             disabled={isReadOnly}
                                             placeholder={formData.deviceType === 'pc' ? "e.g. PC-001" : "e.g. SW-001"}
-                                            className="w-full px-5 py-3 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:outline-none focus:border-[#003135] focus:bg-white transition-all font-bold text-[#003135] disabled:opacity-70 disabled:cursor-not-allowed"
+                                            className={`w-full px-5 py-3 bg-slate-50 border-2 rounded-2xl focus:outline-none focus:bg-white transition-all font-bold disabled:opacity-70 disabled:cursor-not-allowed ${
+                                                errors.pcNumber
+                                                    ? 'border-rose-500 text-rose-900 focus:border-rose-500'
+                                                    : 'border-slate-100 focus:border-[#003135] text-[#003135]'
+                                            }`}
                                         />
+                                        {errors.pcNumber && (
+                                            <p className="text-xs font-semibold text-rose-500 ml-1">{errors.pcNumber}</p>
+                                        )}
                                     </div>
                                     <div className="space-y-1.5">
                                         <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">{formData.deviceType === 'pc' ? 'PC Model' : 'Model/Type'} *</label>
@@ -371,7 +440,18 @@ const DeviceForm = ({ isOpen, onClose, onSave, initialData = null, departments =
                                         />
                                     </div>
                                     <div className="space-y-1.5">
-                                        <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Serial Number *</label>
+                                        <div className="flex justify-between items-center ml-1">
+                                            <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Serial Number *</label>
+                                            {!isReadOnly && (
+                                                <button
+                                                    type="button"
+                                                    onClick={handleGenerateSerial}
+                                                    className="text-[10px] font-black text-[#003135] hover:text-[#004d54] uppercase tracking-wider bg-slate-100 hover:bg-slate-200 px-2.5 py-1 rounded-lg transition-colors border border-slate-200"
+                                                >
+                                                    Generate
+                                                </button>
+                                            )}
+                                        </div>
                                         <input maxLength={100} 
                                             required
                                             name="pcSerial"
@@ -379,8 +459,15 @@ const DeviceForm = ({ isOpen, onClose, onSave, initialData = null, departments =
                                             onChange={handleChange}
                                             disabled={isReadOnly}
                                             placeholder="Enter serial number"
-                                            className="w-full px-5 py-3 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:outline-none focus:border-[#003135] focus:bg-white transition-all font-medium disabled:opacity-70 disabled:cursor-not-allowed"
+                                            className={`w-full px-5 py-3 bg-slate-50 border-2 rounded-2xl focus:outline-none focus:bg-white transition-all font-medium disabled:opacity-70 disabled:cursor-not-allowed ${
+                                                errors.pcSerial
+                                                    ? 'border-rose-500 text-rose-900 focus:border-rose-500'
+                                                    : 'border-slate-100 focus:border-[#003135]'
+                                            }`}
                                         />
+                                        {errors.pcSerial && (
+                                            <p className="text-xs font-semibold text-rose-500 ml-1">{errors.pcSerial}</p>
+                                        )}
                                     </div>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -950,12 +1037,15 @@ const DeviceForm = ({ isOpen, onClose, onSave, initialData = null, departments =
 
                 {/* Footer */}
                 <div className="px-8 py-6 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between">
-                    <div />
+                    <div className="text-sm font-semibold text-rose-500 max-w-[50%] truncate">
+                        {errors.submit}
+                    </div>
                     <div className="flex items-center gap-4">
                         <button 
                             type="button"
                             onClick={onClose}
-                            className="px-8 py-3 text-slate-500 font-bold hover:text-[#003135] transition-colors"
+                            disabled={isSubmitting}
+                            className="px-8 py-3 text-slate-500 font-bold hover:text-[#003135] transition-colors disabled:opacity-50"
                         >
                             {isReadOnly ? 'Close' : 'Cancel'}
                         </button>
@@ -963,12 +1053,13 @@ const DeviceForm = ({ isOpen, onClose, onSave, initialData = null, departments =
                             <button 
                                 form="device-form"
                                 type="submit"
-                                className="px-10 py-4 bg-[#003135] text-white rounded-2xl font-bold flex items-center gap-2 shadow-lg shadow-[#003135]/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+                                disabled={isSubmitting}
+                                className="px-10 py-4 bg-[#003135] text-white rounded-2xl font-bold flex items-center gap-2 shadow-lg shadow-[#003135]/20 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:scale-100"
                             >
-                                <Save size={20} />
-                                {collectionName === 'devices_hlse'
+                                <Save size={20} className={isSubmitting ? "animate-spin" : ""} />
+                                {isSubmitting ? 'Saving...' : (collectionName === 'devices_hlse'
                                     ? (initialData ? 'Update Item' : 'Save Item')
-                                    : (initialData ? 'Update Device' : 'Save Device')}
+                                    : (initialData ? 'Update Device' : 'Save Device'))}
                             </button>
                         )}
                     </div>

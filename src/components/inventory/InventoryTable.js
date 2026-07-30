@@ -523,13 +523,12 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
 
                 if (!isMigratingToCleanId && (!selectedDevice || duplicateDoc.id !== selectedDevice.id)) {
                     const identifierLabel = currentSite.id === 'hlse' ? 'Barcode' : 'PC Number';
-                    alert(`Error: A device with ${identifierLabel} "${formData.pcNumber}" already exists in ${currentSite.name}.`);
-                    return;
+                    throw { field: 'pcNumber', message: `A device with ${identifierLabel} "${formData.pcNumber}" already exists in ${currentSite.name}.` };
                 }
             }
 
-            // 2. Perform a check for uniqueness of Serial Number (pcSerial) if site is hlse
-            if (currentSite.id === 'hlse' && formData.pcSerial) {
+            // 2. Perform a check for uniqueness of Serial Number (pcSerial) if site is hlse (excluding '-' placeholders)
+            if (currentSite.id === 'hlse' && formData.pcSerial && formData.pcSerial.trim() !== '-') {
                 const qSerial = query(
                     collection(db, currentSite.firebaseCollection),
                     where('pcSerial', '==', formData.pcSerial.trim())
@@ -538,8 +537,7 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
                 if (!serialSnapshot.empty) {
                     const duplicateDoc = serialSnapshot.docs[0];
                     if (!selectedDevice || duplicateDoc.id !== selectedDevice.id) {
-                        alert(`Error: A device with Serial Number "${formData.pcSerial}" already exists in ${currentSite.name}.`);
-                        return;
+                        throw { field: 'pcSerial', message: `A device with Serial Number "${formData.pcSerial}" already exists in ${currentSite.name}.` };
                     }
                 }
             }
@@ -589,8 +587,11 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
             setIsFormOpen(false);
             setSelectedDevice(null);
         } catch (error) {
+            if (error && error.field) {
+                throw error;
+            }
             console.error("Error saving device:", error);
-            alert("Failed to save device. Check console for details.");
+            throw new Error(error.message || "Failed to save device. Check console for details.");
         }
     };
 
