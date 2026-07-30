@@ -894,12 +894,7 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
                                         {currentSite?.id === 'hlse' ? (
                                             <>
                                                 <td className="px-6 py-4">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="w-10 h-10 bg-[#003135]/5 rounded-xl flex items-center justify-center text-[#003135] font-black text-sm">
-                                                            {device.pcNumber?.slice(-2)}
-                                                        </div>
-                                                        <span className="text-base font-bold text-[#003135]">{device.pcNumber}</span>
-                                                    </div>
+                                                    <span className="text-base font-bold text-[#003135]">{device.pcNumber}</span>
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     <span className="text-sm font-mono font-bold text-slate-700">{device.pcSerial || 'N/A'}</span>
@@ -946,12 +941,7 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
                                         ) : (
                                             <>
                                                 <td className="px-6 py-4">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="w-10 h-10 bg-[#003135]/5 rounded-xl flex items-center justify-center text-[#003135] font-black text-sm">
-                                                            {device.pcNumber?.slice(-2)}
-                                                        </div>
-                                                        <span className="text-base font-bold text-[#003135]">{device.pcNumber}</span>
-                                                    </div>
+                                                    <span className="text-base font-bold text-[#003135]">{device.pcNumber}</span>
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     <span className="text-sm text-slate-600 font-semibold">{device.pcModel}</span>
