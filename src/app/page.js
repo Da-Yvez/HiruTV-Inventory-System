@@ -21,6 +21,7 @@ import ForcePasswordChange from '@/components/auth/ForcePasswordChange';
 import StoresInOut from '@/components/stores/StoresInOut';
 import WhatsNewManagement from '@/components/settings/WhatsNewManagement';
 import WhatsNewPopup from '@/components/ui/WhatsNewPopup';
+import DatabaseUsage from '@/components/settings/DatabaseUsage';
 
 export default function Home() {
   const { user, loading: authLoading } = useAuth();
@@ -104,6 +105,10 @@ export default function Home() {
             ) : activeSection === 'databaseBackup' ? (
               (user?.isSuperAdmin || user?.permissions?.canBackupDatabase === true) ? (
                 <DatabaseBackup />
+              ) : <AccessDenied />
+            ) : activeSection === 'dbUsage' ? (
+              (user?.isAdmin || user?.isSuperAdmin) ? (
+                <DatabaseUsage />
               ) : <AccessDenied />
             ) : activeSection === 'whatsNew' ? (
               user?.isSuperAdmin ? (

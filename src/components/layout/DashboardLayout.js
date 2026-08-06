@@ -21,6 +21,7 @@ import {
     Printer,
     Database,
     Sparkles,
+    Cpu,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -36,6 +37,7 @@ const DashboardLayout = ({ children, activeSection, onSectionChange, isSystemMod
         { id: 'whatsNew', label: "What's New", icon: <Sparkles size={20} />, show: user?.isSuperAdmin === true },
         { id: 'systemLogs', label: 'System Logs', icon: <History size={20} />, show: user?.isAdmin === true },
         { id: 'databaseBackup', label: 'Database Backup', icon: <Database size={20} />, show: user?.isSuperAdmin === true || user?.permissions?.canBackupDatabase === true },
+        { id: 'dbUsage', label: 'System Usage', icon: <Cpu size={20} />, show: user?.isAdmin === true || user?.isSuperAdmin === true },
     ].filter(item => item.show) : [
         { id: 'inventory',  label: currentSite?.id === 'hlse' ? 'Item Inventory' : 'Device Inventory',  icon: <LayoutDashboard size={20} />, show: hasPermission(user, 'canAccessWTC') || hasPermission(user, 'canAccessHLS') || hasPermission(user, 'canAccessHLSE') },
         { 
