@@ -50,6 +50,7 @@ export const DEFAULT_PERMISSIONS = {
     hlse_canApproveSIO:     false,
     canViewLogs:            false,
     canManageDepartments:   false,
+    canBackupDatabase:      false,
     manage_wtc:             false,
     manage_hls:             false,
     manage_hlse:            false,

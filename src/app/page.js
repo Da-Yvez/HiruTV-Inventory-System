@@ -15,6 +15,7 @@ import PickupManagement from '@/components/settings/PickupManagement';
 import UserManagement from '@/components/users/UserManagement';
 import QRSecurity from '@/components/settings/QRSecurity';
 import SystemLogs from '@/components/settings/SystemLogs';
+import DatabaseBackup from '@/components/settings/DatabaseBackup';
 import QRPrinting from '@/components/inventory/QRPrinting';
 import ForcePasswordChange from '@/components/auth/ForcePasswordChange';
 import StoresInOut from '@/components/stores/StoresInOut';
@@ -96,6 +97,10 @@ export default function Home() {
             <QRSecurity />
           ) : activeSection === 'systemLogs' ? (
             <SystemLogs />
+          ) : activeSection === 'databaseBackup' ? (
+            (user?.isSuperAdmin || user?.permissions?.canBackupDatabase === true) ? (
+              <DatabaseBackup />
+            ) : <AccessDenied />
           ) : (
             <ComingSoon onBack={() => setActiveSection('users')} />
           )}

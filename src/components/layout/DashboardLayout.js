@@ -19,6 +19,7 @@ import {
     ArrowLeftRight,
     QrCode,
     Printer,
+    Database,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -32,6 +33,7 @@ const DashboardLayout = ({ children, activeSection, onSectionChange, isSystemMod
         { id: 'users', label: 'User Management', icon: <Users size={20} />, show: user?.isAdmin === true },
         { id: 'qrSecurity', label: 'QR Security', icon: <QrCode size={20} />, show: user?.isSuperAdmin === true },
         { id: 'systemLogs', label: 'System Logs', icon: <History size={20} />, show: user?.isAdmin === true },
+        { id: 'databaseBackup', label: 'Database Backup', icon: <Database size={20} />, show: user?.isSuperAdmin === true || user?.permissions?.canBackupDatabase === true },
     ].filter(item => item.show) : [
         { id: 'inventory',  label: currentSite?.id === 'hlse' ? 'Item Inventory' : 'Device Inventory',  icon: <LayoutDashboard size={20} />, show: hasPermission(user, 'canAccessWTC') || hasPermission(user, 'canAccessHLS') || hasPermission(user, 'canAccessHLSE') },
         { 
