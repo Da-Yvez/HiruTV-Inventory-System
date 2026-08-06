@@ -20,6 +20,7 @@ import {
     QrCode,
     Printer,
     Database,
+    Sparkles,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -32,6 +33,7 @@ const DashboardLayout = ({ children, activeSection, onSectionChange, isSystemMod
     const mainMenuItems = isSystemMode ? [
         { id: 'users', label: 'User Management', icon: <Users size={20} />, show: user?.isAdmin === true },
         { id: 'qrSecurity', label: 'QR Security', icon: <QrCode size={20} />, show: user?.isSuperAdmin === true },
+        { id: 'whatsNew', label: "What's New", icon: <Sparkles size={20} />, show: user?.isSuperAdmin === true },
         { id: 'systemLogs', label: 'System Logs', icon: <History size={20} />, show: user?.isAdmin === true },
         { id: 'databaseBackup', label: 'Database Backup', icon: <Database size={20} />, show: user?.isSuperAdmin === true || user?.permissions?.canBackupDatabase === true },
     ].filter(item => item.show) : [

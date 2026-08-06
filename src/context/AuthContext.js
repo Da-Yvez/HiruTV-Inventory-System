@@ -35,6 +35,7 @@ export const AuthProvider = ({ children }) => {
             permissions: profile.permissions || {},
             allowedDepartments: profile.allowedDepartments || {},
             forcePasswordChange: profile.forcePasswordChange === true,
+            seenWhatsNew: profile.seenWhatsNew || [],
         };
     }
 

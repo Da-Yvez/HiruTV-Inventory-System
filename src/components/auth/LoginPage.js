@@ -166,6 +166,7 @@ const LoginPage = () => {
       const emailToUse = username.includes('@')
         ? username
         : `${username}${AUTH_DOMAIN_SUFFIX}`;
+      localStorage.removeItem('selectedSite');
       const result = await login(emailToUse, password);
       // Log the login event to the system-wide log collection
       try {

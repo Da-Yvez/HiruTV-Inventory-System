@@ -19,6 +19,8 @@ import DatabaseBackup from '@/components/settings/DatabaseBackup';
 import QRPrinting from '@/components/inventory/QRPrinting';
 import ForcePasswordChange from '@/components/auth/ForcePasswordChange';
 import StoresInOut from '@/components/stores/StoresInOut';
+import WhatsNewManagement from '@/components/settings/WhatsNewManagement';
+import WhatsNewPopup from '@/components/ui/WhatsNewPopup';
 
 export default function Home() {
   const { user, loading: authLoading } = useAuth();
@@ -80,75 +82,90 @@ export default function Home() {
   // System Settings Mode (Global)
   if (isSystemSettingsOpen && (user?.isAdmin || user?.isSuperAdmin)) {
     return (
-      <DashboardLayout 
-        activeSection={activeSection} 
-        onSectionChange={handleSectionChange}
-        isSystemMode={true}
-        onCloseSystemMode={handleCloseSystemSettings}
-      >
-        <div className="p-8 max-w-[1600px] mx-auto">
-          <div className="mb-8">
-              <h1 className="text-3xl font-black text-[#003135] tracking-tight">System Settings</h1>
-              <p className="text-slate-500 font-medium">Manage global configuration and user permissions</p>
+      <>
+        <WhatsNewPopup />
+        <DashboardLayout 
+          activeSection={activeSection} 
+          onSectionChange={handleSectionChange}
+          isSystemMode={true}
+          onCloseSystemMode={handleCloseSystemSettings}
+        >
+          <div className="p-8 max-w-[1600px] mx-auto">
+            <div className="mb-8">
+                <h1 className="text-3xl font-black text-[#003135] tracking-tight">System Settings</h1>
+                <p className="text-slate-500 font-medium">Manage global configuration and user permissions</p>
+            </div>
+            {activeSection === 'users' ? (
+              <UserManagement />
+            ) : activeSection === 'qrSecurity' ? (
+              <QRSecurity />
+            ) : activeSection === 'systemLogs' ? (
+              <SystemLogs />
+            ) : activeSection === 'databaseBackup' ? (
+              (user?.isSuperAdmin || user?.permissions?.canBackupDatabase === true) ? (
+                <DatabaseBackup />
+              ) : <AccessDenied />
+            ) : activeSection === 'whatsNew' ? (
+              user?.isSuperAdmin ? (
+                <WhatsNewManagement />
+              ) : <AccessDenied />
+            ) : (
+              <ComingSoon onBack={() => setActiveSection('users')} />
+            )}
           </div>
-          {activeSection === 'users' ? (
-            <UserManagement />
-          ) : activeSection === 'qrSecurity' ? (
-            <QRSecurity />
-          ) : activeSection === 'systemLogs' ? (
-            <SystemLogs />
-          ) : activeSection === 'databaseBackup' ? (
-            (user?.isSuperAdmin || user?.permissions?.canBackupDatabase === true) ? (
-              <DatabaseBackup />
-            ) : <AccessDenied />
-          ) : (
-            <ComingSoon onBack={() => setActiveSection('users')} />
-          )}
-        </div>
-      </DashboardLayout>
+        </DashboardLayout>
+      </>
     );
   }
 
   if (!currentSite) {
-    return <SiteSelection onOpenSettings={handleOpenSystemSettings} />;
+    return (
+      <>
+        <WhatsNewPopup />
+        <SiteSelection onOpenSettings={handleOpenSystemSettings} />
+      </>
+    );
   }
 
   return (
-    <DashboardLayout activeSection={activeSection} onSectionChange={handleSectionChange}>
-      <div className="p-8 max-w-[1600px] mx-auto">
-        {activeSection === 'inventory' ? (
-          <>
-            <div className="mb-8">
-                <h1 className="text-3xl font-black text-[#003135] tracking-tight">Inventory Dashboard</h1>
-                <p className="text-slate-500 font-medium">Manage and track your IT assets across {currentSite.fullName}</p>
-            </div>
-            <InventoryTable 
-              isFormOpen={isFormOpen} 
-              setIsFormOpen={setIsFormOpen}
-              selectedDevice={selectedDevice}
-              setSelectedDevice={setSelectedDevice}
-              initialSearch={searchParams.get('search')}
-            />
-          </>
-        ) : activeSection === 'qrPrint' ? (
-          <QRPrinting />
-        ) : (activeSection === 'storesInOut' || activeSection.startsWith('storesInOut_')) ? (
-          <StoresInOut activeSection={activeSection} />
-        ) : activeSection === 'logs' ? (
-          <ActivityLogs />
-        ) : activeSection === 'departments' ? (
-          hasPermission(user, 'canManageDepartments') ? (
-            <DepartmentManagement />
-          ) : <AccessDenied />
-        ) : activeSection === 'pickups' ? (
-          hasPermission(user, 'manage_hlse') ? (
-            <PickupManagement />
-          ) : <AccessDenied />
-        ) : (
-          <ComingSoon onBack={() => handleSectionChange('inventory')} />
-        )}
-      </div>
-    </DashboardLayout>
+    <>
+      <WhatsNewPopup />
+      <DashboardLayout activeSection={activeSection} onSectionChange={handleSectionChange}>
+        <div className="p-8 max-w-[1600px] mx-auto">
+          {activeSection === 'inventory' ? (
+            <>
+              <div className="mb-8">
+                  <h1 className="text-3xl font-black text-[#003135] tracking-tight">Inventory Dashboard</h1>
+                  <p className="text-slate-500 font-medium">Manage and track your IT assets across {currentSite.fullName}</p>
+              </div>
+              <InventoryTable 
+                isFormOpen={isFormOpen} 
+                setIsFormOpen={setIsFormOpen}
+                selectedDevice={selectedDevice}
+                setSelectedDevice={setSelectedDevice}
+                initialSearch={searchParams.get('search')}
+              />
+            </>
+          ) : activeSection === 'qrPrint' ? (
+            <QRPrinting />
+          ) : (activeSection === 'storesInOut' || activeSection.startsWith('storesInOut_')) ? (
+            <StoresInOut activeSection={activeSection} />
+          ) : activeSection === 'logs' ? (
+            <ActivityLogs />
+          ) : activeSection === 'departments' ? (
+            hasPermission(user, 'canManageDepartments') ? (
+              <DepartmentManagement />
+            ) : <AccessDenied />
+          ) : activeSection === 'pickups' ? (
+            hasPermission(user, 'manage_hlse') ? (
+              <PickupManagement />
+            ) : <AccessDenied />
+          ) : (
+            <ComingSoon onBack={() => handleSectionChange('inventory')} />
+          )}
+        </div>
+      </DashboardLayout>
+    </>
   );
 }
 
