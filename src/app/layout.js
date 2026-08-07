@@ -16,6 +16,24 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if (!URL.canParse) {
+                URL.canParse = function(url, base) {
+                  try {
+                    new URL(url, base);
+                    return true;
+                  } catch (e) {
+                    return false;
+                  }
+                };
+              }
+            `,
+          }}
+        />
+      </head>
       <body className={`${inter.className} antialiased bg-[#F0F5F5] text-[#212529]`}>
         <AuthProvider>
           <SiteProvider>
