@@ -153,12 +153,17 @@ const GLSLHills = ({ width = '100vw', height = '100vh', cameraZ = 125, planeSize
       }
     }
 
-    // Three.js setup
-    const renderer = new THREE.WebGLRenderer({ canvas: canvasRef.current, antialias: false });
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 10000);
-    const clock = new THREE.Clock();
-    const plane = new Plane();
+    let renderer, scene, camera, clock, plane;
+    try {
+      renderer = new THREE.WebGLRenderer({ canvas: canvasRef.current, antialias: false });
+      scene = new THREE.Scene();
+      camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 10000);
+      clock = new THREE.Clock();
+      plane = new Plane();
+    } catch (error) {
+      console.warn("WebGL could not be initialized:", error);
+      return; // Exit gracefully if WebGL is unsupported
+    }
 
     const resize = () => {
       const canvas = canvasRef.current;
