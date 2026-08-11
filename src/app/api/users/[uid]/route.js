@@ -43,7 +43,11 @@ export async function PATCH(request, { params }) {
     }
 
     // 3. Only Super Admin can change isAdmin or isSuperAdmin flags
-    if (!caller.isSuperAdmin && (isAdmin !== undefined || isSuperAdmin !== undefined)) {
+    const roleChanged = 
+        (isAdmin !== undefined && !!isAdmin !== !!targetData.isAdmin) ||
+        (isSuperAdmin !== undefined && !!isSuperAdmin !== !!targetData.isSuperAdmin);
+
+    if (!caller.isSuperAdmin && roleChanged) {
         return Response.json({ error: 'Only Super Admins can change user roles' }, { status: 403 });
     }
 
