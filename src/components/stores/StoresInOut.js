@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { db } from '@/lib/firebase';
 import { useSite } from '@/context/SiteContext';
 import { useAuth } from '@/context/AuthContext';
@@ -95,6 +95,22 @@ const StoresInOut = ({ activeSection = 'storesInOut_active' }) => {
     const [tempSelectedItems, setTempSelectedItems] = useState([]);
     const [modalSearchTerm, setModalSearchTerm] = useState('');
     const [modalAddQuantities, setModalAddQuantities] = useState({});
+    
+    // Searchable SIO Pickup selection states
+    const [showPickupDropdown, setShowPickupDropdown] = useState(false);
+    const pickupDropdownRef = useRef(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (pickupDropdownRef.current && !pickupDropdownRef.current.contains(event.target)) {
+                setShowPickupDropdown(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
     
     const storesInOutCollectionName = currentSite?.firebaseCollection
         ? currentSite.firebaseCollection.replace('devices_', 'storesInOut_')
@@ -1181,21 +1197,71 @@ const StoresInOut = ({ activeSection = 'storesInOut_active' }) => {
                                     <div className="space-y-1">
                                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Picked Up By *</label>
                                         {currentSite?.pickupUsers && currentSite.pickupUsers.length > 0 ? (
-                                            <select
-                                                required
-                                                disabled={type === 'in'}
-                                                value={pickedUpBy}
-                                                onChange={(e) => setPickedUpBy(e.target.value)}
-                                                className="w-full px-5 py-3 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:outline-none focus:border-[#003135] focus:bg-white transition-all font-bold text-[#003135] disabled:bg-slate-100 disabled:text-slate-500"
-                                            >
-                                                <option value="">-- Select Pickup Person --</option>
-                                                {currentSite.pickupUsers.map(p => {
-                                                    const formatted = `${p.name} (${p.epf ? p.epf : p.nic})`;
-                                                    return (
-                                                        <option key={p.id} value={formatted}>{formatted}</option>
-                                                    );
-                                                })}
-                                            </select>
+                                            <div className="relative" ref={pickupDropdownRef}>
+                                                <div className="relative">
+                                                    <input 
+                                                        required 
+                                                        disabled={type === 'in'}
+                                                        value={pickedUpBy} 
+                                                        onChange={(e) => {
+                                                            setPickedUpBy(e.target.value);
+                                                            setShowPickupDropdown(true);
+                                                        }} 
+                                                        onFocus={() => setShowPickupDropdown(true)}
+                                                        onKeyDown={(e) => {
+                                                            if (e.key === 'Escape') setShowPickupDropdown(false);
+                                                        }}
+                                                        placeholder="Search or type pickup person..." 
+                                                        className="w-full px-5 py-3 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:outline-none focus:border-[#003135] focus:bg-white transition-all font-bold text-[#003135] disabled:bg-slate-100 disabled:text-slate-500 pr-10" 
+                                                    />
+                                                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                                                        <Search size={18} />
+                                                    </div>
+                                                </div>
+                                                {showPickupDropdown && type !== 'in' && (
+                                                    <div className="absolute z-50 w-full mt-1 bg-white border border-slate-150 rounded-2xl shadow-xl max-h-60 overflow-y-auto py-1 scrollbar-thin">
+                                                        {(() => {
+                                                            const searchTerms = pickedUpBy.toLowerCase();
+                                                            const filteredUsers = currentSite.pickupUsers.filter(p => {
+                                                                const nameMatch = p.name?.toLowerCase().includes(searchTerms);
+                                                                const epfMatch = p.epf?.toLowerCase().includes(searchTerms);
+                                                                const nicMatch = p.nic?.toLowerCase().includes(searchTerms);
+                                                                return nameMatch || epfMatch || nicMatch;
+                                                            });
+
+                                                            if (filteredUsers.length === 0) {
+                                                                return (
+                                                                    <div className="px-5 py-3 text-sm text-slate-400 italic font-medium">
+                                                                        No matching pickup users.
+                                                                    </div>
+                                                                );
+                                                            }
+
+                                                            return filteredUsers.map(p => {
+                                                                const formatted = `${p.name} (${p.epf ? p.epf : p.nic})`;
+                                                                return (
+                                                                    <button
+                                                                        key={p.id}
+                                                                        type="button"
+                                                                        onClick={() => {
+                                                                            setPickedUpBy(formatted);
+                                                                            setShowPickupDropdown(false);
+                                                                        }}
+                                                                        className="w-full text-left px-5 py-3 text-[#003135] font-bold hover:bg-[#003135]/5 transition-colors text-sm border-b border-slate-50 last:border-b-0"
+                                                                    >
+                                                                        <div className="flex justify-between items-center">
+                                                                            <span>{p.name}</span>
+                                                                            <span className="text-xs text-slate-400 font-normal">
+                                                                                {p.epf ? `EPF: ${p.epf}` : `NIC: ${p.nic}`}
+                                                                            </span>
+                                                                        </div>
+                                                                    </button>
+                                                                );
+                                                            });
+                                                        })()}
+                                                    </div>
+                                                )}
+                                            </div>
                                         ) : (
                                             <input 
                                                 required 
