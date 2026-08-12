@@ -128,8 +128,8 @@ const StoresInOut = ({ activeSection = 'storesInOut_active' }) => {
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
             const list = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
+                ...doc.data(),
+                id: doc.id
             }));
             setRecords(list);
             setLoading(false);
@@ -148,8 +148,8 @@ const StoresInOut = ({ activeSection = 'storesInOut_active' }) => {
             const invQ = query(collection(db, currentSite.firebaseCollection), orderBy('pcNumber', 'asc'));
             const invSnap = await getDocs(invQ);
             const items = invSnap.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
+                ...doc.data(),
+                id: doc.id
             }));
             
             const siteId = currentSite?.id;
@@ -797,7 +797,7 @@ const StoresInOut = ({ activeSection = 'storesInOut_active' }) => {
                         <td class="meta-value">${record.createdBy}</td>
                     </tr>
                     <tr>
-                        <td class="meta-label">Picked Up By:</td>
+                        <td class="meta-label">${record.type === 'in' ? 'Returned By:' : 'Picked Up By:'}</td>
                         <td class="meta-value">${record.pickedUpBy}</td>
                         <td class="meta-label">Remarks:</td>
                         <td class="meta-value">${record.remarks || '---'}</td>
@@ -847,7 +847,7 @@ const StoresInOut = ({ activeSection = 'storesInOut_active' }) => {
                         <td>
                             <div style="height: 20px;"></div>
                             <div class="sig-line"></div>
-                            Picked up by
+                            ${record.type === 'in' ? 'Returned by' : 'Picked up by'}
                         </td>
                     </tr>
                 </table>
@@ -903,24 +903,34 @@ const StoresInOut = ({ activeSection = 'storesInOut_active' }) => {
         selectedRecord.items?.every(item => checkedItems[item.id]) && 
         statementChecked;
 
-    const filteredInventory = inventory.filter(item => {
-        const query = searchItemTerm.toLowerCase();
-        return (
-            item.pcNumber?.toLowerCase().includes(query) ||
-            item.pcModel?.toLowerCase().includes(query) ||
-            item.brand?.toLowerCase().includes(query)
-        );
-    });
+    const getUniqueFilteredInventory = (searchTerm) => {
+        const seen = new Set();
+        return inventory.filter(item => {
+            if (!item || !item.pcNumber) return false;
+            
+            const pcNumStr = String(item.pcNumber).trim();
+            if (!pcNumStr) return false;
 
-    const modalFilteredInventory = inventory.filter(item => {
-        if (!modalSearchTerm) return true;
-        const query = modalSearchTerm.toLowerCase();
-        return (
-            item.pcNumber?.toLowerCase().includes(query) ||
-            item.pcModel?.toLowerCase().includes(query) ||
-            item.brand?.toLowerCase().includes(query)
-        );
-    });
+            // Prevent duplicate entries in the UI list
+            if (seen.has(pcNumStr)) return false;
+            seen.add(pcNumStr);
+            
+            if (!searchTerm || !searchTerm.trim()) return true;
+            
+            const query = searchTerm.toLowerCase().trim();
+            const modelStr = item.pcModel ? String(item.pcModel).toLowerCase() : '';
+            const brandStr = item.brand ? String(item.brand).toLowerCase() : '';
+            
+            return (
+                pcNumStr.toLowerCase().includes(query) ||
+                modelStr.includes(query) ||
+                brandStr.includes(query)
+            );
+        });
+    };
+
+    const filteredInventory = getUniqueFilteredInventory(searchItemTerm);
+    const modalFilteredInventory = getUniqueFilteredInventory(modalSearchTerm);
 
     return (
         <div className="space-y-8">
@@ -1195,7 +1205,7 @@ const StoresInOut = ({ activeSection = 'storesInOut_active' }) => {
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="space-y-1">
-                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Picked Up By *</label>
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{type === 'in' ? 'Returned By *' : 'Picked Up By *'}</label>
                                         {currentSite?.pickupUsers && currentSite.pickupUsers.length > 0 ? (
                                             <div className="relative" ref={pickupDropdownRef}>
                                                 <div className="relative">

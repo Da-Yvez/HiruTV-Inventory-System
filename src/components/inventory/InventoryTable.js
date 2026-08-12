@@ -352,7 +352,7 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
                         <td class="meta-value">${record.createdBy}</td>
                     </tr>
                     <tr>
-                        <td class="meta-label">Picked Up By:</td>
+                        <td class="meta-label">${record.type === 'in' ? 'Returned By:' : 'Picked Up By:'}</td>
                         <td class="meta-value">${record.pickedUpBy}</td>
                         <td class="meta-label">Remarks:</td>
                         <td class="meta-value">${record.remarks || '---'}</td>
@@ -402,7 +402,7 @@ const InventoryTable = ({ isFormOpen, setIsFormOpen, selectedDevice, setSelected
                         <td>
                             <div style="height: 20px;"></div>
                             <div class="sig-line"></div>
-                            Picked up by
+                            ${record.type === 'in' ? 'Returned by' : 'Picked up by'}
                         </td>
                     </tr>
                 </table>
