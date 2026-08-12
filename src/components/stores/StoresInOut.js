@@ -1764,6 +1764,11 @@ const StoresInOut = ({ activeSection = 'storesInOut_active' }) => {
                                                                     <Check size={14} strokeWidth={2.5} />
                                                                     Added
                                                                 </span>
+                                                            ) : maxQty <= 0 ? (
+                                                                <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-rose-50 border border-rose-100 text-rose-600 rounded-xl text-xs font-black">
+                                                                    <X size={14} strokeWidth={2.5} />
+                                                                    Out of Stock
+                                                                </span>
                                                             ) : (
                                                                 <div className="flex items-center gap-2">
                                                                     <input 
