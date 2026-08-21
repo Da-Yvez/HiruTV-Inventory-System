@@ -300,6 +300,17 @@ const StoresInOut = ({ activeSection = 'storesInOut_active' }) => {
         }));
     };
 
+    // Select All / Deselect All return items for IN SIO
+    const handleSelectAllReturnItems = () => {
+        if (!selectedOutRecord) return;
+        const allChecked = selectedOutRecord.items.every(item => returnItemsChecked[item.id]);
+        const newChecked = {};
+        selectedOutRecord.items.forEach(item => {
+            newChecked[item.id] = !allChecked;
+        });
+        setReturnItemsChecked(newChecked);
+    };
+
     // Open Edit Modal (only for pending documents)
     const handleOpenEdit = async (record) => {
         if (record.status !== 'pending') {
@@ -1360,7 +1371,28 @@ const StoresInOut = ({ activeSection = 'storesInOut_active' }) => {
                                     ) : (
                                         // IN (Return) Items listing: must confirm return of items
                                         <div className="space-y-3">
-                                            <h4 className="font-black text-[#003135] text-sm">2. Check items you are returning back to stores *</h4>
+                                            <div className="flex items-center justify-between">
+                                                <h4 className="font-black text-[#003135] text-sm">2. Check items you are returning back to stores *</h4>
+                                                {selectedOutRecord && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={handleSelectAllReturnItems}
+                                                        className="flex items-center gap-1.5 px-3.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl font-bold text-xs transition-all hover:scale-[1.02] active:scale-[0.98]"
+                                                    >
+                                                        {selectedOutRecord.items.every(item => returnItemsChecked[item.id]) ? (
+                                                            <>
+                                                                <XCircle size={13} strokeWidth={2.5} />
+                                                                Deselect All
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <CheckCircle2 size={13} strokeWidth={2.5} />
+                                                                Select All
+                                                            </>
+                                                        )}
+                                                    </button>
+                                                )}
+                                            </div>
                                             
                                             {!selectedOutRecord ? (
                                                 <div className="py-8 text-center bg-slate-50/50 border-2 border-dashed border-slate-150 rounded-2xl text-slate-400 text-sm font-bold">
